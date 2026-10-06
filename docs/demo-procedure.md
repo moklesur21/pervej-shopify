@@ -42,7 +42,7 @@ brew install node ffmpeg
 npm install -g @shopify/cli@latest
 ```
 
-(Installed through Homebrew? `brew upgrade shopify-cli` instead.) Then the local settings and the check:
+(An old copy from Homebrew? Run `brew uninstall shopify-cli` first. npm can't replace its `shopify` link, and `brew upgrade` can hang building dependencies from source.) Then the local settings and the check:
 
 ```bash
 cp tools/shopify/.env.example tools/shopify/.env.local

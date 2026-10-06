@@ -159,7 +159,7 @@ git push -u origin <demo-id>      # then open the PR
 | Symptom | Cause / fix |
 |---|---|
 | `shopify: command not found` | Open a new terminal; check npm's global bin is on PATH (`npm config get prefix`). |
-| Doctor: "no push --strict" | The CLI is old: `npm install -g @shopify/cli@latest` (or `brew upgrade shopify-cli`). |
+| Doctor: "no push --strict" | The CLI is old: `npm install -g @shopify/cli@latest`. If an old Homebrew `shopify-cli` is installed, `brew uninstall shopify-cli` first — npm can't replace its `shopify` link, and on macOS 14 `brew install`/`upgrade shopify-cli` builds its dependencies from source and can hang. |
 | Doctor: "SHOPIFY_STORE not set" | `tools/shopify/.env.local` is missing or the line is empty (section 3). |
 | Login loop or the wrong account | `shopify auth logout`, then run the command again and sign in with the Partner account. |
 | `push` fails with Theme Check errors | Correct — pushes run `--strict`. Fix the errors (`theme.sh check <id>`), then push again. |

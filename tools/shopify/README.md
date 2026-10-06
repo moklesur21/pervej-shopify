@@ -5,7 +5,7 @@ There is no local Shopify (T0.1): each person has their own **demo dev store** i
 ## Once per machine
 
 ```bash
-npm install -g @shopify/cli@latest      # or: brew upgrade shopify-cli — the CLI must be 4.x (push --strict)
+npm install -g @shopify/cli@latest      # the CLI must be 4.x (push --strict); a Homebrew copy? brew uninstall shopify-cli first
 cp tools/shopify/.env.example tools/shopify/.env.local
 # edit .env.local: SHOPIFY_STORE (your demo store), SHOPIFY_STOREFRONT_PASSWORD
 tools/shopify/theme.sh doctor            # every line [ok]; the first store command opens the CLI's browser login
