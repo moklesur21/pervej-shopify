@@ -352,7 +352,10 @@ export class Capture {
 				const ta = performance.now();
 				let buffer;
 				try {
-					buffer = await page.screenshot( { clip: region, type, quality: type === 'jpeg' ? 95 : undefined, caret: 'initial', timeout: 10000 } );
+					// Short timeout: a screenshot that starts while the page is navigating hangs until its
+					// timeout (Playwright 1.63), and at 10 s that silently lost everything after a page load.
+					// At 500 ms the loop holds the last frame for about half a second and carries on.
+					buffer = await page.screenshot( { clip: region, type, quality: type === 'jpeg' ? 95 : undefined, caret: 'initial', timeout: 500 } );
 				} catch ( error ) {
 					// A navigation can swallow a frame; many in a row is a real failure.
 					if ( ++errors > 25 ) {
