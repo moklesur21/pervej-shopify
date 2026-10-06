@@ -31,10 +31,11 @@ Shopify facts checked against shopify.dev and the Help Center on 2026-10-06. The
    - Give both stores the same **neutral, made-up shop name**. Captures from A and B then look alike, and nothing on screen points to us or to a real brand (house rules §15, video guideline "Clean").
 3. **Plan.** Choose **Basic** for both. A demo should only use features a typical client store has. A brief that needs Plus (for example, checkout-step extensions) gets its own fresh dev store on Plus (workflow §8), not store A or B.
 
-Note the handles here once chosen (they aren't secret):
+Note the handles and the shop name here once chosen (they aren't secret):
 
-- Store A (Yeasir): `________________.myshopify.com`
+- Store A (Yeasir): `pervej-demo-a.myshopify.com`
 - Store B (Asad): `________________.myshopify.com`
+- Shop name, both stores: **Oak & Thread**
 
 ---
 
@@ -140,7 +141,12 @@ The real test comes in Part 7. The CLI needs Asad to be the store's owner **or h
 
 Use the same checklist on both stores, so a demo set up on A reproduces on B. If Asad isn't in yet, Yeasir can do B as well.
 
-**a. Display name.** In the admin, go to **Settings → General → Store details** and set the store name to the neutral shop name from Part 0. Both stores use the same name.
+Store A: done on 2026-10-06 (Yeasir), including a test order with card `1`.
+
+**a. Display name.** In the admin, go to **Settings → General**. Under **Store contact details**, click the first row (it shows the current store name and the store email). Set the store name to the shop name from Part 0 and save. Both stores use the same name.
+
+- There is no "Store details" section any more. The store name lives in that first contact-details row.
+- Leave **Business details** ("<handle> - entity") as it is. That's the billing and tax entity, not the shop name, and it doesn't show on the storefront.
 
 **b. Storefront password.** Go to **Online Store → Preferences → Password protection** and set a **Password**.
 
@@ -219,13 +225,13 @@ Expected output, six lines, all `[ok]`:
 [ok] Node 23.9.0
 [ok] Shopify CLI 4.8.4
 [ok] Settings: tools/shopify/.env.local
-[ok] Store pervej-demo-a.myshopify.com — HTTP 200
+[ok] Store pervej-demo-a.myshopify.com — HTTP 302
 [ok] Storefront password set
 [ok] git identity: Yeasir
 ```
 
 - Your Node version will differ; anything from 22.12 up passes, and the video toolkit needs 22.19.
-- The HTTP code can be any value. Only `000` means the store isn't reachable.
+- The HTTP code can be any value. A dev store usually answers `302`, a redirect to its password page. Only `000` means the store isn't reachable.
 
 **Doctor only checks settings.** It doesn't log in or prove you can push to the store. So run one store command next:
 
@@ -233,7 +239,7 @@ Expected output, six lines, all `[ok]`:
 tools/shopify/theme.sh list
 ```
 
-The first time, a browser opens for the CLI login. Sign in with the **Shopify account that belongs to the Partner organisation**. The command should list the store's themes; the store's own published theme shows as `live`. For Asad, this is the access check from Part 4.
+The first time, a browser opens for the CLI login (or log in first with `shopify auth login`). Sign in with the **Shopify account that belongs to the Partner organisation**. The command should list the store's themes; the store's own published theme shows as `live`. For Asad, this is the access check from Part 4.
 
 ---
 
