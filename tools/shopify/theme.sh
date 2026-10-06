@@ -115,7 +115,8 @@ cmd_doctor() {
 	fi
 
 	if v=$("$SHOPIFY_CLI" version 2>/dev/null | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | head -1) && [[ -n $v ]]; then
-		if "$SHOPIFY_CLI" theme push --help 2>/dev/null | grep -q -- '--strict'; then
+		# Not grep -q: it quits at the first match, the CLI dies on the broken pipe, and pipefail fails the check.
+		if "$SHOPIFY_CLI" theme push --help 2>/dev/null | grep -- '--strict' >/dev/null; then
 			line ok "Shopify CLI $v"
 		else
 			line fail "Shopify CLI $v has no push --strict — update it: npm install -g @shopify/cli@latest"
