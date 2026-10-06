@@ -1,0 +1,27 @@
+# Normalise line endings so macOS and Windows clones never conflict on CRLF.
+* text=auto eol=lf
+*.sh text eol=lf
+*.liquid text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.graphql text eol=lf
+*.bat text eol=crlf
+
+# Binary — never diff, never normalise
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mp4 binary
+*.mov binary
+*.gz binary
+*.zip binary
+*.pdf binary
+*.wasm binary
