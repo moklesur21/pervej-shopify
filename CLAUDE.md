@@ -12,7 +12,7 @@ pervej.com Shopify practice builds ("demos", run exactly like client jobs) plus 
 - `demos/<id>/` — one folder per demo: `brief.md`, `spec.md`, `log.md`, `qa.md`, `handoff.md`, `setup/` (what the "before" plants and how to undo its store data), `capture/` (Playwright scripts, committed), `post/` (`script.md`, `copy.md`, `check.md`; `carousel.md` from the chat), `media/` (git-ignored: clips, renders, and `themes.json` with the theme IDs and preview links on *your* store). Start from `demos/_templates/`. Briefs from the project chat wait in `demos/_briefs/<id>.md` on `main` and are moved (`git mv`, never copied) to `demos/<id>/brief.md` when the demo starts; scored candidates wait in `demos/_backlog/candidates.md`.
 - `shopify-dev/<id>/` — the demo's code: `theme/` is a full base-theme copy committed in a fixed order — `sNN: baseline — … untouched`, then `sNN: setup — …` (the planted before state), then the build stages; `app/`, `middleware/`, `pixel/`, `data/` only when the brief needs them. Merged demos stay as the kit library.
 - `docs/` — `getting-started.md` (new developer setup), `workflow.md` (branches, collaboration, stores), `demo-procedure.md` (one demo start to finish: commands, the asks to Claude Code, log entries, captures, approvals), `house-rules.md` (every rule by topic), `training-index.md` (all 26 tutorials with takeaways, drift notes, progress), `reference/shopify-surface-map.md`, `handbook/` (catalog, strategy v1.4, T0.1–T8). Each person trains in their own sandbox outside this repo.
-- `tools/shopify/` — `theme.sh` (new / dev / check / push / preview / list / clean / diff / doctor). `tools/video/` — the video toolkit (guideline §11): capture helpers, slide templates, `render.mjs`, the §8 `check.mjs`; its README is the reference for writing `capture/`, `post/script.md` and `post/copy.md`. Its capture side is still WordPress-shaped until the Stage 0 `chore/shopify-capture` PR lands (`docs/demo-procedure.md` Stage 0).
+- `tools/shopify/` — `theme.sh` (new / dev / check / push / preview / list / clean / diff / doctor). `tools/video/` — the video toolkit (guideline §11): capture helpers, slide templates, `render.mjs`, the §8 `check.mjs`; its README is the reference for writing `capture/`, `post/script.md` and `post/copy.md`. Capture gets past the dev store's password page and records on the demo's preview themes (IDs from `demos/<id>/media/themes.json`).
 - `asset/` — strategy v1.2, demo plan v1.0, content-engine playbook v1.0, proof-content ad strategy v1.0, demo cycle runbook v1.1, demo video guideline v1.1. Read-only reference.
 
 ## Commands
@@ -28,7 +28,8 @@ tools/shopify/theme.sh diff <id> [--stat]        # the review diff from the setu
 tools/shopify/theme.sh clean <id>                # the demo's unpublished themes off your store (Stage 6)
 
 npm --prefix tools/video run setup               # once per machine — toolkit packages + Chromium, then its doctor
-node tools/video/capture.mjs <id> before|after|qa
+node tools/video/capture.mjs <id> before|after|qa   # on the before / after preview theme — push it first
+npm --prefix tools/video test                     # the capture side against a mock dev store, after any change to it
 node tools/video/check.mjs <id>                  # the §8 self-check → post/check.md
 node tools/video/render.mjs <id>                 # only after Approval 1 is committed → media/final/
 ```

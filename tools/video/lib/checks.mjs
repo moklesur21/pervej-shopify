@@ -48,7 +48,7 @@ const COPY_ONLY = [
 	[ /\p{Extended_Pictographic}/u, 'an emoji' ],
 	[ /\b(?:like|comment|share|repost)\b[^.\n]{0,30}\b(?:below|this post|if you)\b|\bwatch (?:to|till|until) the end\b/i, 'asks for engagement' ],
 ];
-const LEAK = /[A-Za-z]:\\|(?:^|\s)\/[\w.-]+\/|\.(?:php|mjs|js|json|md)\b|wp-(?:content|admin|includes)|localhost|127\.0\.0\.1|https?:\/\/|\b[\w.+-]+@[\w-]+\.[a-z]{2,}/i;
+export const LEAK = /[A-Za-z]:\\|(?:^|\s)\/[\w.-]+\/|\.(?:php|mjs|js|json|md)\b|wp-(?:content|admin|includes)|myshopify\.com|preview_theme_id|localhost|127\.0\.0\.1|https?:\/\/|\b[\w.+-]+@[\w-]+\.[a-z]{2,}/i;
 const NUMBER = /\d+(?:[:.,/]\d+)*%?/g;
 const TIME = /\b\d{1,2}:\d{2}\b/g;
 
@@ -276,6 +276,9 @@ export async function runCheck( demo ) {
 			}
 			if ( same.length ) {
 				problems.push( `"${ base }": before and after differ in ${ same.join( ', ' ) }` );
+			}
+			if ( b.theme && a.theme && b.theme.id === a.theme.id ) {
+				problems.push( `"${ base }": before and after were both recorded on theme #${ b.theme.id } — the before clip comes from the before theme, the after clip from the after theme` );
 			}
 		}
 		for ( const name of usedClips ) {

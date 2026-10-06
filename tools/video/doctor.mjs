@@ -4,8 +4,8 @@
  *
  *   npm --prefix tools/video run doctor
  *
- * Exit code 0 when every required line passes. The site check is a warning only: rendering
- * does not need the site, capturing does.
+ * Exit code 0 when every required line passes. The store lines are warnings only: rendering
+ * does not need the store, capturing does.
  */
 
 import fs from 'node:fs';
@@ -15,7 +15,8 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { TOOL_DIR } from './lib/paths.mjs';
 import { locate, run, ffmpeg, probe, x264 } from './lib/ffmpeg.mjs';
-import { siteUrl } from './lib/env.mjs';
+import { storeUrl, storefrontPassword } from './lib/env.mjs';
+import { enterPassword } from './lib/storefront.mjs';
 import { FONT } from './lib/layout.mjs';
 
 const require = createRequire( import.meta.url );
@@ -170,11 +171,37 @@ if ( locate( 'ffmpeg' ) && locate( 'ffprobe' ) ) {
 	} );
 }
 
+let store = null;
 try {
-	const response = await fetch( siteUrl() + '/', { signal: AbortSignal.timeout( 8000 ) } );
-	line( response.ok ? 'ok' : 'warn', `Site ${ siteUrl() } — HTTP ${ response.status }${ response.ok ? '' : ' (needed for capture only)' }` );
+	store = storeUrl();
 } catch ( error ) {
-	line( 'warn', `Site ${ siteUrl() } — not reachable (${ error.cause?.code || error.name }); needed for capture only` );
+	line( 'warn', `Store — ${ error.message } (needed for capture only)` );
+}
+if ( store ) {
+	try {
+		const response = await fetch( store + '/', { signal: AbortSignal.timeout( 8000 ) } );
+		line( response.ok ? 'ok' : 'warn', `Store ${ store } — HTTP ${ response.status }${ response.ok ? '' : ' (needed for capture only)' }` );
+	} catch ( error ) {
+		line( 'warn', `Store ${ store } — not reachable (${ error.cause?.code || error.name }); needed for capture only` );
+	}
+	const password = storefrontPassword();
+	if ( ! password ) {
+		line( 'warn', 'Storefront password — SHOPIFY_STOREFRONT_PASSWORD not set; a password-protected dev store needs it for capture' );
+	} else if ( depsOk ) {
+		// The real thing, the way capture does it: a fresh browser gets past the password page.
+		const { chromium } = await import( 'playwright' );
+		let browser;
+		try {
+			browser = await chromium.launch();
+			const page = await ( await browser.newContext() ).newPage();
+			const passed = await enterPassword( page, store, password, null );
+			line( 'ok', `Storefront password — ${ passed ? 'accepted; a fresh browser gets past the password page' : 'no password page shown' }` );
+		} catch ( error ) {
+			line( 'warn', `Storefront password — ${ error.message.split( '\n' )[ 0 ] }` );
+		} finally {
+			await browser?.close();
+		}
+	}
 }
 
 console.log( failed ? `\n${ failed } check(s) failed. See tools/video/README.md.` : '\nAll set.' );

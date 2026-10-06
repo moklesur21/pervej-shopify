@@ -10,7 +10,8 @@
   },
   "scripts": {
     "setup": "npm ci && playwright install --only-shell chromium && node doctor.mjs",
-    "doctor": "node doctor.mjs"
+    "doctor": "node doctor.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "lighthouse": "13.5.0",

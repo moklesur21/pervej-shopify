@@ -1,8 +1,6 @@
 # tools/video — the video toolkit
 
-> **Status in this repo.** The toolkit came over from `pervej-woo`. Render, slides and the self-check are platform-neutral and work as described. The capture side is still WordPress-shaped — `signIn` goes through `wp-login.php`, `adminBar` hides the WordPress admin bar, settings come from `tools/wp/.env.local`, and Lighthouse checks for WooCommerce's Coming soon page — until the Stage 0 `chore/shopify-capture` PR adapts it to dev stores (storefront password, preview theme, Shopify's preview bar), as `docs/demo-procedure.md` Stage 0 step 4 describes. Read the WordPress details below with that in mind.
-
-Turns a finished demo into Thursday's LinkedIn video, as `asset/pervej-demo-video-guideline-v1.1.md` describes (§4 capture, §5 script, §6 the edit, §8 the self-check, §11 this toolkit). Three commands do it: **capture** records the site, **render** cuts the approved script into the video, **check** writes the self-check into `post/check.md`. When and by whom each runs is `docs/demo-procedure.md` (Stages 2b, 4a, 5).
+Turns a finished demo into Thursday's LinkedIn video, as `asset/pervej-demo-video-guideline-v1.1.md` describes (§4 capture, §5 script, §6 the edit, §8 the self-check, §11 this toolkit). Three commands do it: **capture** records the storefront, **render** cuts the approved script into the video, **check** writes the self-check into `post/check.md`. When and by whom each runs is `docs/demo-procedure.md` (Stages 2b, 4a, 5).
 
 Free, openly licensed tools only: Playwright and Lighthouse (Apache-2.0), ffmpeg (LGPL/GPL), IBM Plex Sans (SIL OFL 1.1, bundled in `slides/fonts/` with its licence).
 
@@ -26,7 +24,7 @@ It installs the pinned packages into `tools/video/node_modules/` (git-ignored, a
 npm --prefix tools/video run doctor
 ```
 
-Every line should read `[ok]`. The site line is only a warning: rendering does not need the site, capturing does.
+Every line should read `[ok]`. The store lines are only warnings: rendering does not need the store, capturing does. With `tools/shopify/.env.local` filled in, the storefront-password line proves a fresh browser gets past your dev store's password page.
 
 **Windows notes**
 - winget puts ffmpeg on the user PATH, which terminals opened before the install don't see. The toolkit also looks in winget's install folder itself; `FFMPEG_PATH` / `FFPROBE_PATH` override both.
@@ -43,7 +41,9 @@ Every line should read `[ok]`. The site line is only a warning: rendering does n
 | 5a — the self-check before Approval 1 | `node tools/video/check.mjs <id>` | `post/check.md` |
 | 5b — after Approval 1 | `node tools/video/render.mjs <id>` | `media/final/`, `media/render/`, `post/check.md` |
 
-`<id>` is the demo ID (`w01-coupon-checkout-hang` → `demos/w01-coupon-checkout-hang/`) or a path to a demo folder. Capture options: `--only coupon,lighthouse` (run only those clips, stills or Lighthouse pages; prefix match — the steps between them still run), `--script <file>`, `--headed` (watch it, for writing the script; never for the real take). Setup installs only the headless browser, so `--headed` needs the full Chromium once: `npm --prefix tools/video exec -- playwright install chromium`.
+Capture runs on the preview themes on **your** dev store: push them first — `tools/shopify/theme.sh push <id> before` before the before clips, `… push <id> after` before the after and QA clips. Capture reads their IDs from `media/themes.json` and refuses to start without them.
+
+`<id>` is the demo ID (`s01-cart-drawer-lag` → `demos/s01-cart-drawer-lag/`) or a path to a demo folder. Capture options: `--only drawer,lighthouse` (run only those clips, stills or Lighthouse pages; prefix match — the steps between them still run), `--theme <label|id|live>` (another theme than the phase's: `before` captures the before theme, `after` and `qa` the after theme), `--script <file>`, `--headed` (watch it, for writing the script; never for the real take). Setup installs only the headless browser, so `--headed` needs the full Chromium once: `npm --prefix tools/video exec -- playwright install chromium`.
 
 Exit codes: 0 when everything passed, 1 otherwise. Render runs the check itself at the end.
 
@@ -52,27 +52,25 @@ Exit codes: 0 when everything passed, 1 otherwise. Render runs the check itself 
 Two scripts per demo: `shoot.mjs` records before **and** after (the same file, run twice — guideline §2 "one script shoots before and after"), `qa.mjs` records the QA run. Each exports one function; the toolkit owns the browser, the file names and the clean-up. An illustration with invented selectors:
 
 ```js
-// demos/w01-coupon-checkout-hang/capture/shoot.mjs
+// demos/s01-cart-drawer-lag/capture/shoot.mjs
 export default async function ( cap ) {
-	const page = await cap.open(); // desktop, 1280 × 800 at 2×
-	await page.goto( cap.url( '/checkout/' ) );
-	await cap.clip( page, 'coupon-spins', { frame: '.wc-block-components-order-summary', wide: true, speed: true }, async ( act ) => {
-		await act.click( '.wc-block-components-totals-coupon .wc-block-components-panel__button' );
-		await act.type( '.wc-block-components-totals-coupon__input input', 'WELCOME10' );
-		await act.click( '.wc-block-components-totals-coupon__button' );
-		await act.wait( 6000 ); // the wait is the point: this clip plays uncut at real speed
+	const page = await cap.open(); // desktop, 1280 × 800 at 2× — past the password page, on this phase's theme
+	await page.goto( cap.url( '/products/stoneware-mug' ) );
+	await cap.clip( page, 'drawer-add', { frame: 'cart-drawer', wide: true, speed: true }, async ( act ) => {
+		await act.click( 'product-form button[name="add"]' );
+		await act.wait( 5000 ); // the wait is the point: this clip plays uncut at real speed
 	} );
-	await cap.lighthouse( '/checkout/' ); // after the clips, never during one
+	await cap.lighthouse( '/products/stoneware-mug' ); // after the clips, never during one
 }
 ```
 
 | Call | What it does |
 |---|---|
-| `cap.open( { view, scale, signIn, adminBar } )` | A fresh browser context (clean profile). `view`: `'desktop'` (1280 × 800, the default), `'phone'` (390, only for a mobile problem), `'tablet'` (768) or a QA width (`360`, `390`, `768`). `scale`: 2 (default) or 3. `signIn`: `'admin'` or `'customer'`, done before anything is recorded. The WordPress admin bar is hidden unless `adminBar: true` (only when the work lives in the admin). |
-| `cap.clip( page, name, options, async ( act ) => { … } )` | Records `media/raw/<id>-<phase>-<name>.mp4` and a `.json` sidecar. Same name, same steps in every phase. |
+| `cap.open( { view, scale, signIn } )` | A fresh browser context (clean profile), already past the store's password page and on this phase's preview theme, open on the home page. `view`: `'desktop'` (1280 × 800, the default), `'phone'` (390, only for a mobile problem), `'tablet'` (768) or a QA width (`360`, `390`, `768`). `scale`: 2 (default) or 3. `signIn: 'customer'` signs a classic-accounts test customer in before anything is recorded; new customer accounts (a code by email) and the Shopify admin can't be scripted, and say so. Shopify's preview bar is always hidden. |
+| `cap.clip( page, name, options, async ( act ) => { … } )` | Records `media/raw/<id>-<phase>-<name>.mp4` and a `.json` sidecar. Same name, same steps in every phase. Refuses to keep footage when the page is on the password page or on another theme than the phase's, before or after the steps; the sidecar records the theme. |
 | `cap.still( page, name, { frame } \| { fullPage: true } )` | A PNG for evidence in `qa.md`. |
-| `cap.lighthouse( path, { runs, categories, name } )` | Three runs (odd numbers only), each in a fresh browser: mobile, Lighthouse's default simulated throttling, local site. Keeps every report and writes `<id>-<phase>-lighthouse-<page>.json` with the middle score; prints the line for `qa.md` row 8. |
-| `cap.url( path )`, `cap.id`, `cap.phase` | Site URL (from `WP_URL`, default `http://localhost/pervej-woo`), demo ID, `before` / `after` / `qa`. |
+| `cap.lighthouse( path, { runs, categories, name } )` | Three runs (odd numbers only), each in a fresh browser profile that first gets past the password page and opens the preview theme, then measures in that same browser (the method of Shopify's own Lighthouse CI): mobile, Lighthouse's default simulated throttling, dev store preview. Keeps every report and writes `<id>-<phase>-lighthouse-<page>.json` with the middle score; prints the line for `qa.md` row 8. |
+| `cap.url( path )`, `cap.id`, `cap.phase`, `cap.theme` | The store URL on this phase's preview theme (`SHOPIFY_STORE` plus `?preview_theme_id=…&_fd=0&pb=0`) — open every page through it, or the page leaves the theme; the demo ID; `before` / `after` / `qa`; the theme `{ id, label, name }`. |
 
 **Clip options.**
 - `frame` — what to frame (§4 "Framed, never whole"). A desktop clip must have one:
@@ -88,9 +86,9 @@ export default async function ( cap ) {
 
 **What it enforces.** Frames are timestamped screenshots at 2–3× device scale, assembled by ffmpeg at their real timing (§4 "Sharp"); Playwright's video recorder is never used. A frame that would need scaling up is refused. A step that throws discards the footage (§4 "Honest"). Every clip prints its frame rate, its longest single frame (a page load shows up there), and the smallest site text inside the frame. If that text lands under 32 px on the canvas, frame narrower or cut the shot: a 400 px frame at `{ scale: 3 }` puts 16 px text at 43 px.
 
-**One machine per demo.** Record a demo's before, after and QA clips on the same machine. macOS and Windows draw the same page with different fonts, and each person's database is local. The sidecar records the platform, and the check fails a before/after pair that came from two machines.
+**One machine per demo.** Record a demo's before, after and QA clips on the same machine. macOS and Windows draw the same page with different fonts, and each person captures on their own dev store. The sidecar records the platform, and the check fails a before/after pair that came from two machines.
 
-**Sign-in.** Credentials come from the environment, never from a script (§4 "Clean"): `WP_ADMIN_USER` / `WP_ADMIN_PASS` (already in `tools/wp/.env.local`) and `PERVEJ_CAPTURE_USER` / `PERVEJ_CAPTURE_PASS` for a test customer. Add those two to `tools/wp/.env.local` or export them. In a git worktree, the main checkout's `tools/wp/.env.local` is used.
+**Store, password, sign-in.** All from the environment, never from a script (§4 "Clean"): `SHOPIFY_STORE` and `SHOPIFY_STOREFRONT_PASSWORD` from `tools/shopify/.env.local` (see `tools/shopify/README.md`), and `PERVEJ_CAPTURE_USER` / `PERVEJ_CAPTURE_PASS` for a classic-accounts test customer when a clip needs one. In a git worktree, the main checkout's `.env.local` is used. The password page is passed the way Shopify's own Lighthouse CI does it — the password put into the store's own form in the browser — so no cookie is copied by name (Shopify replaced its old password cookie with an opaque one in 2025).
 
 ## The script the render reads — `post/script.md`
 
@@ -236,7 +234,9 @@ Voice-over fitting (§10) is not built yet: the video ships silent.
 | `lib/approvals.mjs` | The Approval 1 gate |
 | `lib/slides.mjs`, `slides/` | The frame page (`frame.html`, `frame.css`, `frame.js`) Playwright photographs, and the bundled font |
 | `lib/checks.mjs` | The self-check |
-| `lib/ffmpeg.mjs`, `lib/paths.mjs`, `lib/env.mjs` | Plumbing |
+| `lib/storefront.mjs` | The Shopify side of capture: the password page, the preview query, the theme check, the preview bar |
+| `lib/ffmpeg.mjs`, `lib/paths.mjs`, `lib/env.mjs` | Plumbing; `env.mjs` reads `tools/shopify/.env.local` and the demo's `media/themes.json` |
+| `test/` | `npm --prefix tools/video test`: the capture side against a mock password-protected dev store. Run it after any change to capture; the real store stays the final proof. |
 
 Changing the look, the words in `brand.json` or a rule is a shared change: a `chore/` branch from `main`, reviewed and merged by Yeasir.
 
@@ -246,7 +246,13 @@ Changing the look, the words in `brand.json` or a rule is a shared change: a `ch
 |---|---|
 | `ffmpeg not found` | Install it (above), open a new terminal, or set `FFMPEG_PATH` / `FFPROBE_PATH`. |
 | `Chromium … does not launch` | `npm --prefix tools/video run setup` |
-| Storefront shows "Great things are on the horizon" | WooCommerce's Coming soon mode is on (Settings → Site visibility). Signed-out capture needs it off; signed in as admin, the page shows a banner instead. Lighthouse always runs signed out, so it refuses to measure until the store is live. |
+| "The storefront password was rejected" | `SHOPIFY_STOREFRONT_PASSWORD` in `tools/shopify/.env.local` doesn't match the store's (Online Store → Preferences). |
+| "the store's password page is showing" | The store is password-protected and `SHOPIFY_STOREFRONT_PASSWORD` is empty. |
+| "No …/themes.json" or "has no "after" theme" | Push the theme first: `tools/shopify/theme.sh push <id> after`. |
+| "the page shows theme … not …" | A page left the demo's preview theme: open every page with `cap.url()`. If the theme was deleted from the store, push it again. |
+| The preview bar shows in a frame | Shopify changed it. It is hidden by `pb=0` and by the CSS in `lib/storefront.mjs` (`#PBarNextFrameWrapper`, `#preview-bar-iframe`): find its new element in devtools, add it there, re-run `npm --prefix tools/video test`, re-shoot. |
+| "this store uses new customer accounts" | Customer sign-in needs classic accounts on the dev store (Settings → Customer accounts); otherwise record the clip signed out. |
+| "no password form this toolkit recognises" | The theme's password template has no `form[action*="password"]`; the standard Dawn and Horizon templates have one. |
 | "smallest text … under 32" | Frame narrower (`{ selector, width: 400 }` with `cap.open( { scale: 3 } )`) or drop the shot. |
 | Low fps or a long single frame | A page load holds the last frame. Judge it at the pilot (§14.1); the sidecar keeps `fps` and `maxGap`. |
 | `Not rendered — …` | The message says what to fix: an unparsed shot, a missing clip, a missing or uncommitted approval, words changed since approval, too long. |

@@ -4,8 +4,9 @@
  * Sharp: no Playwright video recorder. Screenshots of the framed part of the page are taken in a loop
  * at 2–3× device scale, each stamped with the time it was taken, and ffmpeg assembles them at that
  * real timing. Followable: a teal tap marker is drawn into the page during capture only, and actions
- * are paced. Clean: the WordPress admin bar is hidden; sign-in happens before recording, with
- * credentials from the environment. Every clip leaves a JSON sidecar the self-check reads.
+ * are paced. Clean: the store's password page is passed and the demo's preview theme opened before
+ * anything is recorded, Shopify's preview bar is hidden, and every clip checks it is still on that
+ * theme; credentials come from the environment. Every clip leaves a JSON sidecar the self-check reads.
  */
 
 import fs from 'node:fs';
@@ -14,7 +15,8 @@ import crypto from 'node:crypto';
 import { devices } from 'playwright';
 import { FPS, FRAME, MIDDLE, MIN_PX, PALETTE, QA_HEIGHTS, SCALE, VIEWS } from './layout.mjs';
 import { ensureDir, shown, toolVersion } from './paths.mjs';
-import { credentials, siteUrl } from './env.mjs';
+import { credentials, storeUrl, storefrontPassword } from './env.mjs';
+import { assertStorefront, enterPassword, hidePreviewBar, withPreview } from './storefront.mjs';
 import { ffmpeg, TO_YUV, x264 } from './ffmpeg.mjs';
 import { measure } from './lighthouse.mjs';
 
@@ -24,21 +26,6 @@ const MARK = 'data-pervej-capture';
 
 const sleep = ( ms ) => new Promise( ( resolve ) => setTimeout( resolve, ms ) );
 const hash = ( text ) => crypto.createHash( 'sha1' ).update( text ).digest( 'hex' ).slice( 0, 12 );
-
-/** Hides the WordPress admin bar (and with it the signed-in username). */
-function hideAdminBar() {
-	const add = () => {
-		const style = document.createElement( 'style' );
-		style.setAttribute( 'data-pervej-capture', '' );
-		style.textContent = '#wpadminbar{display:none!important}html,body.admin-bar{margin-top:0!important}';
-		( document.head || document.documentElement ).append( style );
-	};
-	if ( document.readyState === 'loading' ) {
-		document.addEventListener( 'DOMContentLoaded', add );
-	} else {
-		add();
-	}
-}
 
 /**
  * Draw (or replace) a capture-only overlay in the page: the tap marker, the one highlight, or the
@@ -120,8 +107,9 @@ export class Capture {
 	 * @param {object} args.browser Playwright Browser.
 	 * @param {string} args.script  Path of the capture script, for the sidecar.
 	 * @param {string[]} args.only  Run only these clip / still / Lighthouse names (prefix match).
+	 * @param {object|null} args.theme The preview theme { id, label, name } (lib/env.mjs previewTheme), or null for the published one.
 	 */
-	constructor( { demo, phase, browser, script, only } ) {
+	constructor( { demo, phase, browser, script, only, theme = null } ) {
 		if ( ! PHASES.includes( phase ) ) {
 			throw new Error( `Phase must be one of ${ PHASES.join( ', ' ) }.` );
 		}
@@ -130,6 +118,7 @@ export class Capture {
 		this.browser = browser;
 		this.script = script;
 		this.only = only || [];
+		this.theme = theme;
 		this.pages = new Map();
 		this.made = [];
 		ensureDir( demo.raw );
@@ -140,13 +129,16 @@ export class Capture {
 	}
 
 	/**
-	 * Full URL on the local site.
+	 * Full URL on the store, on the demo's preview theme. Open every page through it: the preview
+	 * query is what keeps a page on the before or after theme.
 	 *
-	 * @param {string} p Path such as '/checkout/' (or a full URL).
+	 * @param {string} p Path such as '/cart' (or a full URL; one on another host is left as it is).
 	 * @return {string} URL.
 	 */
 	url( p = '/' ) {
-		return /^https?:\/\//.test( p ) ? p : `${ siteUrl() }/${ String( p ).replace( /^\/+/, '' ) }`;
+		const base = storeUrl();
+		const full = /^https?:\/\//.test( p ) ? p : `${ base }/${ String( p ).replace( /^\/+/, '' ) }`;
+		return new URL( full ).origin === base ? withPreview( full, this.theme?.id ) : full;
 	}
 
 	wanted( name ) {
@@ -159,11 +151,13 @@ export class Capture {
 	 * @param {object}        o          Options.
 	 * @param {string|number} o.view     'desktop' (1280, default) · 'phone' (390) · 'tablet' (768) · a QA width (360, 390, 768).
 	 * @param {number}        o.scale    Device scale, 2 (default) or 3.
-	 * @param {string}        o.signIn   'admin' or 'customer' — signs in before anything is recorded.
-	 * @param {boolean}       o.adminBar Keep the WordPress admin bar (only when the work lives in the admin).
-	 * @return {Promise<import('playwright').Page>} Page.
+	 * @param {string}        o.signIn   'customer' — signs in before anything is recorded.
+	 * @return {Promise<import('playwright').Page>} Page, on the store's home page, past the password page, on the theme.
 	 */
-	async open( { view = 'desktop', scale = SCALE.min, signIn = null, adminBar = false } = {} ) {
+	async open( { view = 'desktop', scale = SCALE.min, signIn = null, ...rest } = {} ) {
+		if ( 'adminBar' in rest ) {
+			throw new Error( 'adminBar was a WordPress option: a Shopify storefront has no admin bar, and its preview bar is always hidden.' );
+		}
 		let viewport;
 		let name;
 		if ( typeof view === 'number' ) {
@@ -188,11 +182,16 @@ export class Capture {
 			locale: 'en-US',
 			colorScheme: 'light',
 		} );
-		if ( ! adminBar ) {
-			await context.addInitScript( hideAdminBar );
-		}
+		await context.addInitScript( hidePreviewBar );
 		const page = await context.newPage();
 		this.pages.set( page, { view: name, viewport, scale, context } );
+		// Nothing of this is recorded: the password page, the preview session and any sign-in come first.
+		const password = storefrontPassword();
+		if ( password ) {
+			await enterPassword( page, storeUrl(), password, this.theme?.id );
+		}
+		await page.goto( this.url( '/' ) );
+		await assertStorefront( page, this.theme, 'Opening the store' );
 		if ( signIn ) {
 			await this.signIn( page, signIn );
 		}
@@ -200,26 +199,38 @@ export class Capture {
 	}
 
 	/**
-	 * Sign in through wp-login.php. Do it before any clip: nothing of it is recorded.
+	 * Sign a test customer in through the classic-accounts login form (`/account/login`). Do it before
+	 * any clip: nothing of it is recorded. New customer accounts sign in with a one-time code by email,
+	 * which no script can do — the error says so.
 	 *
 	 * @param {import('playwright').Page} page Page.
-	 * @param {'admin'|'customer'}        who  Account.
+	 * @param {'customer'}                who  Account.
 	 */
 	async signIn( page, who ) {
 		const { user, pass } = credentials( who );
-		await page.goto( this.url( '/wp-login.php' ) );
-		await page.fill( '#user_login', user );
-		await page.fill( '#user_pass', pass );
-		// Wait for WordPress's answer to the sign-in itself, the response that sets the cookie: the login
-		// page is already loaded, so waiting for "load" could return before it (seen once on a slow run).
-		// The dashboard it redirects to is not waited for; the script's next goto replaces it.
+		const base = storeUrl();
+		const form = 'form[action*="/account/login"]';
+		await page.goto( this.url( '/account/login' ) );
+		if ( new URL( page.url() ).origin !== base ) {
+			throw new Error( `Sign-in as customer: /account/login went to ${ new URL( page.url() ).host } — this store uses new customer accounts (a one-time code by email), which can't be scripted. Record the clip signed out, or switch the dev store to classic accounts.` );
+		}
+		try {
+			await page.waitForSelector( `${ form } input[type="password"]`, { state: 'attached', timeout: 15000 } );
+		} catch {
+			throw new Error( `Sign-in as customer: no classic login form (${ form }) on /account/login.` );
+		}
+		await page.$eval( form, ( f, c ) => {
+			f.querySelector( 'input[type="email"], input[name="customer[email]"]' ).value = c.user;
+			f.querySelector( 'input[type="password"]' ).value = c.pass;
+		}, { user, pass } );
 		await Promise.all( [
-			page.waitForResponse( ( r ) => r.request().method() === 'POST' && new URL( r.url() ).pathname.endsWith( '/wp-login.php' ) ),
-			page.click( '#wp-submit' ),
+			page.waitForNavigation( { timeout: 30000 } ),
+			page.$eval( form, ( f ) => f.submit() ),
 		] );
-		const cookies = await page.context().cookies();
-		if ( ! cookies.some( ( c ) => c.name.startsWith( 'wordpress_logged_in_' ) ) ) {
-			throw new Error( `Sign-in as ${ who } failed: check the credentials in the environment / tools/wp/.env.local.` );
+		await page.goto( this.url( '/account' ) );
+		const landed = new URL( page.url() );
+		if ( landed.origin !== base || /^\/(?:account\/login|challenge)/.test( landed.pathname ) ) {
+			throw new Error( `Sign-in as customer failed (landed on ${ landed.pathname }): check PERVEJ_CAPTURE_USER and PERVEJ_CAPTURE_PASS, and whether the store puts a captcha on customer login (/challenge).` );
 		}
 	}
 
@@ -321,6 +332,7 @@ export class Capture {
 		}
 		const meta = this.pages.get( page );
 		const stem = `${ this.id }-${ this.phase }-${ name }`;
+		const theme = await assertStorefront( page, this.theme, `Clip ${ name }` );
 		const region = await this.region( page, o.frame );
 		const show = Math.min( MIDDLE.width / region.width, MIDDLE.height / region.height );
 		if ( show > meta.scale + 1e-9 ) {
@@ -379,6 +391,8 @@ export class Capture {
 			await sleep( o.lead ?? 600 );
 			await steps( this.act( page, o.pace ?? 500 ) );
 			await sleep( o.tail ?? 800 );
+			// Still on the demo's theme, and no password page: otherwise the footage shows the wrong store.
+			await assertStorefront( page, this.theme, `Clip ${ name }, after its steps` );
 		} catch ( error ) {
 			failure = error;
 		}
@@ -446,9 +460,12 @@ export class Capture {
 				sample: ( fontStart.css === minCss ? fontStart : fontEnd ).sample,
 			},
 			url,
+			// The theme the clip was recorded on, read from the page: the check fails a before/after
+			// pair recorded on one theme.
+			theme: theme ? { ...theme, label: this.theme?.label ?? 'live' } : null,
 			startedAt: startedAt.toISOString(),
 			browser: this.browser.version(),
-			// Fonts render differently on macOS and Windows, and each database is local: the check
+			// Fonts render differently on macOS and Windows, and each person captures on their own store: the check
 			// compares this so a before/after pair from two machines is caught.
 			platform: process.platform,
 		};
@@ -553,6 +570,7 @@ export class Capture {
 			return null;
 		}
 		const file = `${ this.id }-${ this.phase }-${ name }.png`;
+		await assertStorefront( page, this.theme, `Still ${ name }` );
 		const clip = o.frame ? await this.region( page, o.frame ) : undefined;
 		await page.screenshot( { path: this.demo.rawFile( file ), clip, fullPage: Boolean( o.fullPage ) && ! clip } );
 		this.made.push( { file } );
@@ -576,7 +594,7 @@ export class Capture {
 		}
 		const stem = this.demo.rawFile( `${ this.id }-${ this.phase }-${ name }` );
 		console.log( `  ${ name }: ${ o.runs || 3 } runs…` );
-		const summary = await measure( { url: this.url( p ), stem, runs: o.runs, categories: o.categories } );
+		const summary = await measure( { url: this.url( p ), stem, runs: o.runs, categories: o.categories, theme: this.theme } );
 		const cat = summary.category;
 		const scores = summary.runs.map( ( r ) => r.scores[ cat ] ).join( ' · ' );
 		console.log( `  ${ path.basename( stem ) }.json — ${ cat } ${ scores } → ${ summary.median.scores[ cat ] } (middle of ${ summary.runs.length }; ${ summary.measured })` );

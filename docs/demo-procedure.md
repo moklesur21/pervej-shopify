@@ -56,11 +56,17 @@ tools/shopify/theme.sh doctor
 
 Every line `[ok]`. In Claude Code, approve the `shopify-dev-mcp` server from `.mcp.json` (current Shopify docs for every session) and run the T0.3 litmus test once: *"Is `checkout.liquid` still the way to customize checkout?"* — the answer must say it is retired.
 
-4. **Adapt the video toolkit to Shopify.** `tools/video/` was built for the WordPress site; its capture side still signs in through `wp-login.php`, hides the WordPress admin bar and reads `tools/wp/.env.local`. Open a Claude Code session on a `chore/shopify-capture` branch from `main` and ask, word for word:
+4. **Check the video toolkit against your store.** `tools/video/` was adapted to Shopify on `chore/shopify-capture`: it gets past the storefront password page the way Shopify's own Lighthouse CI does, records on the demo's preview themes, hides the preview bar, and fails with a clear message when a page shows the wrong theme. With step 3 done:
 
-> Adapt `tools/video/` to Shopify per the video guideline §4 "Clean": read the store, the storefront password and the optional capture customer from `tools/shopify/.env.local`, and the before/after theme IDs from `demos/<id>/media/themes.json`; have `cap.url()` open pages on the right preview theme; get past the storefront password page before anything is recorded; hide Shopify's preview bar; sign in a classic-accounts test customer when a clip asks for one; make `cap.lighthouse()` measure the preview theme past the password page, or refuse with a clear message; extend the leak check to `myshopify.com` domains and `preview_theme_id`; update the doctor and the README. Check every Shopify detail against current docs. Plan mode first. Test it against my demo store. Open a PR.
+```bash
+npm --prefix tools/video run doctor
+```
 
-Reviewed line by line, merged by Yeasir. Until it is merged, Stages 2b, 4a and 5 cannot run.
+The storefront-password line must say *accepted*. Then one real capture, asked of Claude Code on a throwaway branch:
+
+> Check the capture toolkit on my demo store: `tools/shopify/theme.sh new s00-capture-check` and `push s00-capture-check before`, a throwaway `demos/s00-capture-check/capture/shoot.mjs` with one clip on the home page and one Lighthouse run, then `capture.mjs s00-capture-check before`. Show me a frame from the clip and the wide still: no password page, no preview bar, the sidecar on the pushed theme. Then clean the theme off the store and delete the throwaway folders; commit nothing.
+
+Anything the real store does differently from the mock in `tools/video/test/` is fixed in the toolkit, on a `chore/` branch, before the first demo.
 
 5. **The baseline catalogue.** Both demo stores should hold the same products, so a demo set up on store A reproduces on store B. Ask, on a `chore/shopify-baseline` branch:
 
