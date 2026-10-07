@@ -1,7 +1,7 @@
 # Pervej.com — Demo-Project Plan
 
-**v1.0 · Mon 28 Sep 2026 · Owner: Yeasir Pervej**
-Reads with: `white-label-dev-strategy.md` v1.3 · `pervej-proof-content-ad-strategy-v1.md` · `content-engine-playbook.md` · the W / T / AW tutorial catalogs
+**v1.2 · Wed 7 Oct 2026 · Owner: Yeasir Pervej**
+Reads with: `white-label-dev-strategy.md` v1.3 · `pervej-proof-content-ad-strategy-v1.md` · `content-engine-playbook.md` · `pervej-demo-cycle-runbook-v1.md` v1.1 (what the project chat does and what the repo receives) · `pervej-demo-video-guideline-v1.2.md` (the video and its post copy — it takes precedence there) · the W / T / AW tutorial catalogs
 **Shareable with:** Asad and the VA. Contains no pricing, pipeline or client data.
 
 ---
@@ -31,10 +31,11 @@ White-label work can never be shown, so these builds are not a stopgap until cli
 
 | Who | Does | Never |
 |---|---|---|
-| **Yeasir** | Supplies the week's job list (screenshots or pasted text) · picks from the shortlist · approves the brief · reviews every PR line by line and merges · final QA pass · voice-over · approves all copy · holds every prospect conversation | Lets a demo through without the review |
-| **Claude** | Scores candidates against §3 · writes the brief package and the setup script · **plays the client**: answers questions, approves the plan, accepts or rejects the delivery · drafts the content package from the real log | Skips a gate · reveals client facts Asad didn't ask for · accepts a delivery with a missing artefact |
-| **Asad** | Runs setup and records the "before" · asks questions · plans and estimates · builds in Claude Code and reviews the diff · runs QA · writes the handoff · records raw footage · opens the PR · resets the environment | Touches Upwork · frames a demo as client work · merges to `main` |
-| **VA** | Files recordings by ID · edits and captions · publishes on the schedule | Holds a conversation · changes copy without approval |
+| **Yeasir** | Supplies the week's job list (screenshots or pasted text) · picks from the shortlist · approves the brief · reviews every PR line by line and merges · final QA pass · gives the two video approvals (the words, then the cut) · approves all copy · holds every prospect conversation | Lets a demo through without the review |
+| **Claude** (the project chat) | Scores candidates against §3 · writes the brief · **plays the client**: answers questions, approves the plan, accepts or rejects the delivery · drafts the Tuesday carousel from the real log | Skips a gate · reveals client facts Asad didn't ask for · accepts a delivery with a missing artefact |
+| **Claude Code** (the repo) | Plans `setup/`, the spec and the build from `brief.md` · captures the before, after and QA clips · writes every log time from the system clock · after handoff drafts the video script and post copy, makes the voice, renders the video and runs the self-check | Invents a client answer · sees Upwork material · voices or renders words that are not approved |
+| **Asad** | Runs setup and has the before clips captured · asks questions · plans and estimates · builds in Claude Code and reviews the diff · runs QA · writes the handoff · opens the PR · resets the environment | Touches Upwork · frames a demo as client work · merges to `main` |
+| **VA** | Files the finished video by ID · publishes on the schedule | Holds a conversation · changes copy without approval |
 
 Either Yeasir or Asad can build a demo; the other one reviews the PR. Yeasir always merges.
 
@@ -107,13 +108,13 @@ First line for the post: *"Checkout spins forever when a coupon is applied — o
 
 ### 4.1 The package
 
-For the picked job, Claude produces the following in the demo's folder, on a new branch:
+For the picked job, Claude writes one brief file (runbook §3). It waits in `demos/_briefs/<id>.md` on `main` and is moved to `demos/<id>/brief.md` when the demo starts. Around it:
 
 | File | What | Who |
 |---|---|---|
-| `brief.md` | The client's ask, anonymised and in the client's words; context; "done" from the client's side; constraints; deadline; deliverables; shot list | Asad reads |
-| `setup/` | Script(s) that build the "before" state from the baseline, plus a one-line check that the symptom is present. Claude drafts; Asad runs and adjusts if the environment differs | Asad runs, off the clock |
-| `questions.md` | Empty table for Asad's questions and the client's answers, with timestamps | Both |
+| `brief.md` | The client's ask, anonymised and in the client's words; context; "done" from the client's side; constraints; deadline; deliverables; mini approach; shoot list | Claude writes · Asad reads |
+| `setup/` | Script(s) that build the "before" state on the baseline, plus a one-line check that the symptom is present | Claude Code writes from the brief · Asad runs, off the clock |
+| `## Q&A` in `brief.md` | Asad's questions and the client's answers, with timestamps — only when a real ambiguity goes back to the chat | Both |
 | **Client fact sheet** | Held by Claude in the chat, not in the repo: theme, plugins, hosting, catalog size, what the client tried, what they would say if asked. Only what Asad asks gets revealed — that is what makes the "questions" slide honest | Claude only |
 
 ### 4.2 Brief template
@@ -144,46 +145,55 @@ on mobile. Desktop seems fine. We're losing orders. Classic checkout, about 400 
 - No live site; no new paid plugins; nothing outside a child theme or plugin
 
 ## Deliverables
-Staging link · walkthrough video (2 min) · handover note · rollback note · one thing to flag to the client
+Staging link · handover note · rollback note · one thing to flag to the client
 
-## Shot list
+## Mini approach
+4–6 bullets — the path to the fix, no code
+
+## Shoot list
 1 before (symptom + Lighthouse) · 2 plan + questions · 3 build · 4 QA run · 5 handoff
 
 ## Before you start
-Reset to baseline, run setup/, confirm the symptom, record shot 1, then log "brief received".
-Ask your questions in questions.md before planning. Nothing starts until the plan is approved.
+Reset to baseline, run setup/, confirm the symptom, capture the before clips, then log "brief received".
+A real ambiguity goes to the chat; the answer lands in ## Q&A. Nothing starts until the plan is approved.
+
+## Q&A
+| # | Question | Asked | Answer | Answered |
 ```
+
+The full template, with the field notes, is `demos/_templates/brief.md` in the repo.
 
 ### 4.3 Question, approval and acceptance protocol
 
-1. Asad writes 2–3 questions in `questions.md` and posts them in the project chat. Claude answers as the client, from the fact sheet, in the same session. Both sides go into the file with timestamps.
-2. Asad writes `plan.md` — tasks, hours, delivery date. Claude approves as the client, or pushes back once, as a real client sometimes does. The approval time is logged.
-3. At handoff, Claude accepts or lists what is missing — once. A missing "before" clip, an empty QA line, or a handoff without a rollback note is not accepted.
+1. When a real ambiguity comes up, Asad puts 2–3 questions to the project chat. Claude answers as the client, from the fact sheet, in the same session. Both sides go into `brief.md` `## Q&A` with timestamps, before `spec.md` changes.
+2. Asad writes `spec.md` — scope, testable done-means, tasks, hours, delivery date. Claude approves as the client, or pushes back once, as a real client sometimes does. The approval goes into `## Q&A` with its time.
+3. At handoff, Claude accepts or lists what is missing — once. A missing "before" clip, an empty QA line, or a handoff without a rollback note is not accepted. A walkthrough video is not a deliverable and is never counted as missing, including in briefs written before 7 Oct 2026 that still list one. The client never asks for a live URL, a real device or another browser (§7).
 
 ---
 
 ## 5. Repo, folders, branches
 
-One repo, `pervej-demos`. `main` only. One folder per demo, one short-lived branch per demo. Branches are named by demo ID, never by person — authorship is in the commits. Asad opens a PR; Yeasir reviews and merges; the branch is deleted; the merge commit is tagged with the ID. Two people never conflict, because they are never in the same folder.
+Two repos with the same shape: `pervej-woo` (WooCommerce — its root is the local WordPress site) and `pervej-shopify`. `main` is shared truth. One folder per demo, one short-lived branch per demo. Branches are named by demo ID, never by person — authorship is in the commits. Asad opens a PR; Yeasir reviews and merges; the branch is deleted; the merge commit is tagged with the ID. Two people never conflict, because they are never in the same folder. Shared files (rules, docs, tooling, templates) change only on a small `chore/` branch. Each repo's `CLAUDE.md` and `docs/workflow.md` hold the detail.
 
 ```
-pervej-demos/
-  README.md
-  _backlog/candidates.md          scored candidates waiting for a slot
-  _templates/                     brief · questions · plan · log · qa · handoff · post
-  _tools/
-    wp/       baseline.sql.gz · reset.sh · break/  (reusable "make it broken" recipes)
-    shopify/  push-unpublished.sh · publish.sh · cleanup.sh
-  woocommerce/
+pervej-woo/                       the WordPress site; only authored code is tracked
+  demos/
+    _briefs/<id>.md               briefs from the project chat, waiting for their slot
+    _backlog/candidates.md        scored candidates waiting for a slot
+    _templates/                   brief · spec · log · qa · handoff
     w03-coupon-checkout-hang/
-      brief.md  questions.md  plan.md  log.md  qa.md  handoff.md
-      src/        the deliverable — plugin or child theme
-      setup/      builds the "before" state from the baseline
+      brief.md  spec.md  log.md  qa.md  handoff.md
+      setup/      builds the "before" state on the baseline
+      capture/    the capture scripts: before, after, QA
+      post/       script.md · copy.md · check.md · carousel.md
+      media/      clips, voice and the finished video — never in git; copied to the drive
       db/         optional end-state dump, gzipped, 10 MB max
-      post/       carousel.md · script.md · captions.md · timeline.md
-  shopify/
-    s02-cart-drawer-free-shipping/  same shape; src/ = the full theme
+  wp-content/plugins/pervej-w03-coupon-checkout-hang/   the deliverable (a child theme: themes/pervej-<id>/)
+  tools/wp/       baseline.sh — the golden baseline · seed-store.php
+  tools/video/    capture, voice, render and the self-check (video guideline §11)
 ```
+
+`pervej-shopify` keeps the same `demos/<id>/` shape for Shopify. A demo's deliverable is its theme: a full copy of the base theme in `shopify-dev/<id>/theme/`, committed untouched first, then the planted before state, then the build (with `app/`, `pixel/` and the like only when the brief needs them). There is no local Shopify: `tools/shopify/theme.sh` moves the theme between the repo and each person's own dev store, and `media/themes.json` records the before and after themes there.
 
 **Naming.** ID = platform letter + running number + slug: `w03-coupon-checkout-hang`, `s02-cart-drawer-free-shipping`. The same ID names the folder, the branch, the tag, the recording folder and every post file — the VA finds everything by ID.
 
@@ -195,74 +205,79 @@ pervej-demos/
 
 ### 6.1 WordPress
 
-Two LocalWP sites per person:
+One local site per person, at the repo root: MAMP on macOS, XAMPP (or Local) on Windows, at `http://localhost/pervej-woo`. Before every demo, `tools/wp/baseline.sh --reset` rebuilds the golden baseline, then the demo's `setup/` builds the before state on top. Full builds use the same site; their `setup/` builds the starting state.
 
-- **`demo-fix`** — the weekly site. Reset to the golden baseline before every demo (`_tools/wp/reset.sh`: `wp db reset` → import `baseline.sql.gz` → `wp search-replace` → flush caches), then the demo's `setup/` builds the before state on top.
-- **`demo-build`** — for full builds and anything that outlives a week.
+**Golden baseline**, built by script from the repo, never shared as a dump: current WordPress and WooCommerce, a block theme, a seeded catalog (simple, variable, sale, out of stock, backorder, virtual), a coupon, test customers and orders, Cash on delivery, HPOS on, Query Monitor and Email Log. Each person's database is local. When WordPress or WooCommerce ships a major release, the script is updated on a `chore/` branch.
 
-**Golden baseline**, versioned and tagged in `_tools/wp/`: current WordPress and WooCommerce, a block theme, the WooCommerce sample products, a handful of test customers and orders, one admin user. Re-cut it after every WordPress or WooCommerce major release and put the versions in its filename.
-
-**Setup scripts are the reusable asset.** Each demo's `setup/` plants its own problem; recipes worth keeping (Elementor bloat, a known plugin conflict, a slow theme) move to `_tools/wp/break/` for reuse. After ten demos this is a library of "make it broken" recipes, and no permanently broken site is ever needed. Setup always runs off the clock, before "brief received".
+**Setup scripts are the reusable asset.** Each demo's `setup/` plants its own problem; recipes worth keeping (Elementor bloat, a known plugin conflict, a slow theme) move into the shared tooling for reuse. After ten demos this is a library of "make it broken" recipes, and no permanently broken site is ever needed. Setup always runs off the clock, before "brief received".
 
 No separate installs per demo. No shared database with prefixes.
 
 ### 6.2 Shopify
 
 - **Two Partner dev stores** for the weekly demos, one each. Both created under the Partner organisation with Asad as a staff member — never under a personal login — and team access checked after creation, so nothing walks away if the arrangement changes.
-- **Each demo = a theme.** Duplicate Dawn or Horizon → `shopify theme push --unpublished` from the demo's `src/` → publish for the recording → unpublish and delete afterwards. The code lives in git; the store's theme library is capped.
-- **`setup/` for Shopify** = the "before" theme (base theme plus the planted issue), pushed unpublished; shot 1 is recorded from its preview link.
+- **Shopify work happens on the dev store.** A WooCommerce demo runs entirely on localhost; Shopify has no local store. Every Shopify demo is built, captured and checked on the person's own development store, reached over the internet behind its storefront password. Where this plan says "local" for Shopify, it means nothing beyond your own machine and your own dev store.
+- **Each demo = two unpublished themes.** `tools/shopify/theme.sh new <id>` copies the untouched base theme (Horizon for a new build, Dawn when the brief's store runs it) into `shopify-dev/<id>/theme/`. The build runs on `theme.sh dev` (a private development theme on the store); `theme.sh push <id> before|after` pushes the planted and the finished state as unpublished themes. Capture and QA record them through their preview, past the storefront password, with the preview bar hidden. Nothing is ever published and the live theme is never touched; `theme.sh clean <id>` deletes the demo's themes after the merge. The code lives in git; the store's theme library is capped.
+- **`setup/` for Shopify** = `setup/README.md`: what the theme's setup commit plants, any store data it needs and how to undo it, and a one-line check that the symptom is present. The before theme is pushed unpublished, and shot 1 is recorded on its preview.
 - **Full store builds get a fresh dev store each**, since they need their own catalog, navigation and content. The organisation limit is 250 dev stores (shopify.dev); delete a store once its build is recorded and merged.
-- **Staging link** = the theme preview link. Theme Check runs before every push.
+- **Staging link** in the handoff reads *"Practice build on a Shopify development store; not publicly available."* — no link: dev stores sit behind a password. Theme Check runs before every push.
 
 ---
 
 ## 7. The workflow, step by step
 
-| Step | What | Log entry | Shot |
+| Step | What | Log entry | Captured |
 |---|---|---|---|
-| 0 | Off the clock: branch from `main` → reset → run `setup/` → confirm the symptom → before-Lighthouse → commit | `setup complete (off the clock)` | 1 |
+| 0 | Off the clock: branch from `main` → reset → run `setup/` → confirm the symptom → before clips and before-Lighthouse → commit | `setup complete (off the clock)` · `before clips recorded (off the clock)` | before clips |
 | 1 | Brief received; read it | `brief received` (T0) | — |
-| 2 | Questions in `questions.md` → client answers | `questions sent` · `questions answered` | 2 |
-| 3 | `plan.md` — tasks, hours, delivery date → client approval | `plan approved` | 2 |
-| 4 | Build: spec in the task file → Claude Code builds → review the diff → commit. OBS running throughout | `first commit` · `staging ready` | 3 |
-| 5 | QA per `qa.md` — the Playwright run is recorded | `QA passed` | 4 |
-| 6 | `handoff.md` written; walkthrough recorded | `handoff sent` | 5 |
-| 7 | PR opened; Yeasir reviews line by line and merges; tag with the ID | — | — |
-| 8 | Raw footage and `shots.md` to the drive; Claude drafts `post/` from the real log | — | — |
-| 9 | Reset the environment; optional `db/` dump | — | — |
+| 2 | Questions to the project chat, only for a real ambiguity → answers in `brief.md` `## Q&A` | `questions answered` | — |
+| 3 | `spec.md` — scope, done-means, tasks, hours, delivery date → client approval | — | — |
+| 4 | Build: one stage per ask, the spec pasted → Claude Code builds → review the diff → commit | `first commit` · `staging ready` | — |
+| 5 | After clips (the same capture script) and the QA run → QA per `qa.md` | `QA passed` | after clips · QA run |
+| 6 | `handoff.md` written and sent | `handoff sent` | — |
+| 7 | PR opened; the other person reviews line by line | — | — |
+| 8 | The video package on the branch: script and copy (Approval 1), voice and render (Approval 2); `media/` to the drive (video guideline) | — | the video |
+| 9 | Yeasir merges and tags with the ID; the environment is reset; optional `db/` dump | — | — |
 
-**The QA sheet is the delivery checklist, unchanged:** functional pass on the scoped items including edge cases · full purchase flow with a test order · 360 / 390 / 768 px plus one real device · Chrome, Safari, Firefox, iOS Safari · Theme Check / PHPCS clean · no hardcoded user-facing strings · no console errors, no PHP notices · Lighthouse before and after, no regression · cart and checkout scripts still fire · rollback path confirmed · walkthrough recorded. A known defect is not a pass.
+For Shopify, step 0's reset is the base theme committed untouched, `setup/` ends with the planted theme pushed as the before theme, and step 9's reset is `theme.sh clean` plus undoing the store data `setup/` lists.
 
-**The handoff note, in the shape an agency would receive:** what changed · staging link · walkthrough link · how to roll back · *what I'd flag to the client* — one insight the agency can take upstairs and look good with.
+**The QA sheet is the delivery checklist:** functional pass on the scoped items including edge cases · full purchase flow with a test order, its emails checked in Email Log (Shopify: the customer notifications the order's timeline lists — which email, to whom; test orders use an `@example.com` address) · 360 / 390 / 768 px, emulated · Chrome · Theme Check / PHPCS clean · no hardcoded user-facing strings · no console errors, no PHP notices (Shopify: no `Liquid error`) · Lighthouse before and after, no regression · cart and checkout scripts still fire · rollback path confirmed. A known defect is not a pass.
+
+**Checked where they run (since 7 Oct 2026).** Practice builds are checked where they run — the local site, or for Shopify the demo's unpublished themes on the person's own development store — never on a public site, and nothing extra is installed to check them: emails in Email Log (Shopify: the order's timeline, read in the admin by a person, since no script signs in there), phone widths emulated, Chrome only. Lighthouse numbers say where they were measured ("local site", or "dev store preview"). No live URL, tunnel, real device or other browser is asked for, and none is claimed in `qa.md`, the video or the post.
+
+**The handoff note, in the shape an agency would receive:** what changed · staging link, which for a practice build reads *"Practice build, runs locally; not publicly hosted."* (Shopify: *"Practice build on a Shopify development store; not publicly available."*) · how to roll back · *what I'd flag to the client* — one insight the agency can take upstairs and look good with.
 
 ---
 
 ## 8. Recording and content
 
-### 8.1 Shot list
+### 8.1 Shoot list
 
-| # | Shot | Captured by |
+Nothing is recorded by hand: no OBS, no screen recorder, no microphone. Claude Code writes the capture scripts from the brief's shoot list, and the rest becomes slides drawn from the demo's files (video guideline §4–§5).
+
+| # | Shot | How |
 |---|---|---|
-| 1 | The problem as it stands — symptom on screen, before-Lighthouse | Playwright `recordVideo` or OBS, **before anything is touched** |
-| 2 | Plan and questions — the plan file, the Q&A | OBS |
-| 3 | The build — staging site, commits, the hardest part solved | OBS, continuous; cut later |
-| 4 | QA — the test run, the test order, after-Lighthouse | Playwright `recordVideo` |
-| 5 | Handoff — the note, the staging link, the rollback line | OBS |
+| 1 | The problem as it stands — the before clip, before-Lighthouse | `capture/` script, **before anything is touched** |
+| 2 | The brief, the questions and the plan | slides from `brief.md`, its Q&A and `spec.md` |
+| 3 | The hardest part solved — the after clip | the same capture script, on the finished site: same steps, same framing |
+| 4 | QA — the test order, the phone widths, after-Lighthouse | the QA capture script |
+| 5 | Handoff — the timeline and what the agency receives | slides from `log.md` and `handoff.md` |
 
-**Mechanics.** 1080p, screen plus mic where narration helps, no face. Leave OBS running for the whole session and cut later — starting and stopping at the right moment is the thing that goes wrong. Playwright records its own browser sessions, so shots 1 and 4 come out as clips with nobody pressing record. The Claude Code terminal stays out of frame (§1.1). The planting in `setup/` is never recorded. Asad does not need to judge "when to record": the shot list is a checklist, and the client does not accept a fix until the before-clip exists.
+**Mechanics.** The capture records only the page, sharp and framed, so nothing of the tooling is ever in frame (§1.1). The planting in `setup/` is never recorded. Nobody judges "when to record": the shoot list is a checklist, and the client does not accept a fix until the before clip exists. The voice is Yeasir's, made from the approved script (video guideline §10).
 
 ### 8.2 Files
 
-Shared drive, mirroring the repo: `recordings/<platform>/<id>/raw/` (`w03-shot1-before.mp4`, `w03-shot3-build.mp4` …) and `/final/`. Asad adds `shots.md` listing each file and what it shows. The drive path goes into `log.md`.
+Each demo's `media/` folder — clips, Lighthouse reports, the voice, the finished video, cover and copy — is copied to the shared drive as `recordings/<platform>/<id>/`. The file names say what each file is. The drive path goes into `log.md`.
 
 ### 8.3 Cuts and posts
 
+**One video per demo (since 7 Oct 2026).** There is no separate handoff walkthrough. The square LinkedIn video tells the whole story.
+
 | Output | Length | Where | Made by |
 |---|---|---|---|
-| **Walkthrough** — problem → plan → workflow → result | 3–5 min | YouTube as host only (unlisted or channel); embedded on pervej.com; linked in DMs | VA edits · Yeasir voices from Claude's script |
-| **Thursday native video** | 60–90 s cut of the same recording | LinkedIn | VA · captions on |
+| **The demo video** — the problem before · the brief · the questions and plan · the fix with before/after · QA · the timeline · the flag | 60–90 s, square | LinkedIn, native, Thursday | Claude Code, after handoff, from the demo's files (video guideline) · in Yeasir's voice |
 | **Tuesday carousel** | 9–10 slides: cover · brief · questions · plan · timeline · build · QA · handoff · flag + CTA | LinkedIn document post | Claude drafts from the log · Yeasir approves |
-| **Timeline image** | One graphic | LinkedIn, alternative Thursday post | VA |
+| **Timeline image** | One graphic | LinkedIn, alternative Thursday post | the render, from the video's timeline scene |
 
 Every output carries the practice-build label. Default cadence: build in week N, publish in week N+1.
 
@@ -272,7 +287,7 @@ Every output carries the practice-build label. Default cadence: build in week N,
 
 A store from scratch, or a redesign of an old site, is a demo like any other: same brief, same questions, same log, same shots, same handoff. What differs:
 
-- **Environment:** `demo-build` (WordPress) or a fresh dev store (Shopify); it outlives the weekly reset.
+- **Environment:** the same local site, not reset until the build is merged (WordPress), or a fresh dev store (Shopify).
 - **Scope in the brief:** home page in two or three directions (the way an agency presents options to a client), shop page, single product, cart and checkout, one or two content pages. Heavier work on the shop or product page when the brief calls for it.
 - **Content and images:** supplied by the client — Claude generates the copy and a product CSV; images come from free-licence sources or the WooCommerce sample set. Nothing lifted from a real store.
 - **Redesigns:** `setup/` builds a deliberately dated old site as the "before".
@@ -287,8 +302,8 @@ A store from scratch, or a redesign of an old site, is a demo like any other: sa
 | Mon | Setup off the clock · brief received · questions · plan · start | Claude answers as the client and approves the plan |
 | Tue | Build | Last week's carousel goes out |
 | Wed | Build → staging ready → QA | — |
-| Thu | Handoff · walkthrough · PR · raw footage to the drive | Yeasir reviews the PR · last week's video goes out |
-| Fri | Reset · score next week's candidates with Claude · demo store or kit work | VA edits this week's cuts |
+| Thu | Handoff · PR | Yeasir reviews the PR · last week's video goes out |
+| Fri | Score next week's candidates with Claude · demo store or kit work · reset after the merge | Claude Code: this week's video package — Yeasir's two approvals; `media/` to the drive |
 
 Capacity: one build a week; the content adds 2–3 hours. When the week is short, the order is: reply to conversations → Thursday video → Tuesday carousel → everything else.
 
@@ -296,38 +311,40 @@ Capacity: one build a week; the content adds 2–3 hours. When the week is short
 
 ## 11. Definition of done
 
-A demo is done when all of these are true: `brief.md`, `questions.md`, `plan.md`, `log.md` (real timestamps, setup marked off the clock), `qa.md` (every line passed) and `handoff.md` complete · PR merged and tagged · raw footage and `shots.md` on the drive · `post/` drafted · the environment reset. Missing any one: not done.
+A demo is done when all of these are true: `brief.md` (with any Q&A), `spec.md`, `log.md` (real timestamps, setup and before clips marked off the clock), `qa.md` (every line passed) and `handoff.md` complete · `capture/` committed · `post/` script and copy approved, the voice made, `check.md` every row passed with both approvals · `media/` on the drive · PR merged and tagged · the environment reset. Missing any one: not done. The video is done when the post is live and its URL is in `log.md`.
 
 ---
 
 ## 12. Templates
 
-**`questions.md`**
+The working templates are `demos/_templates/` in the repo; in short:
+
+**`brief.md`** — §4.2, ending in the `## Q&A` table:
 
 | # | Question | Asked | Answer | Answered |
 |---|---|---|---|---|
 
-**`plan.md`** — tasks · hours per task · total · delivery date · risks · out of scope · approved at
+**`spec.md`** — why · in scope · out of scope · testable done-means · touchpoints · risks · the agreed plan: tasks, hours per task, total, delivery date
 
 **`log.md`**
 
 | Event | Time (Dhaka) |
 |---|---|
 | Setup complete (off the clock) | |
+| Before clips recorded (off the clock) | |
 | Brief received | |
-| Questions sent | |
-| Questions answered | |
-| Plan approved | |
+| Questions answered (only if a question went to the chat) | |
 | First commit | |
 | Staging ready | |
 | QA passed | |
 | Handoff sent | |
+| Published — the post URL (the Thursday after) | |
 
 Recordings: `<drive path>`
 
 **`qa.md`** — the §7 checklist as a table: item · result · evidence (screenshot or clip)
 
-**`handoff.md`** — what changed · staging link · walkthrough · rollback · what I'd flag to the client · warranty line
+**`handoff.md`** — what changed · staging link (the practice-build line, §7) · rollback · what I'd flag to the client · warranty line
 
 **`_backlog/candidates.md`**
 
@@ -338,4 +355,6 @@ Recordings: `<drive path>`
 
 ## 13. Changelog
 
+- **v1.2 — 7 Oct 2026.** The plan now describes the repo and the video as they are built: the video guideline v1.2 §13 amendments folded in — Claude Code captures, voices and renders; no OBS, `shots.md` or `captions.md`; the VA files and publishes (§2, §5, §7, §8, §10, §11) — and the runbook v1.1 model: one brief file with its Q&A, `spec.md` for the plan, `pervej-woo` / `pervej-shopify` with `demos/<id>/`, one local site rebuilt by `tools/wp/baseline.sh` (§4, §5, §6.1, §9, §12). Shopify's staging line: "Practice build on a Shopify development store; not publicly available."; Shopify emails are checked in the order's timeline (§6.2, §7). The same day, Shopify as `pervej-shopify` builds it (§5, §6.2, §7): Shopify work happens on each person's own dev store, not locally; the theme lives in `shopify-dev/<id>/theme/`; each demo is two unpublished themes recorded through their preview and never published; `setup/` is a README; the timeline check says what it shows (the customer notifications, which email and to whom) and test orders use an `@example.com` address.
+- **v1.1 — 7 Oct 2026** (the project chat). One video per demo: the separate 2–3 minute handoff walkthrough is dropped from the deliverables (§4.2, §7, §8.3, §10, §12). The square LinkedIn video, made after handoff from the demo's files and narrated by Yeasir, tells the whole story. A missing walkthrough is never counted at acceptance, including in briefs that still list one (§4.3). Practice builds are checked locally: the staging link reads "Practice build, runs locally; not publicly hosted.", emails are checked in Email Log, phone widths are emulated, Chrome only (§6.2, §7).
 - **v1.0 — 28 Sep 2026.** First version: rules; roles; selection gates, scoring and lane rotation; the client-brief package and Q&A protocol; repo, folder and branch model; WordPress and Shopify environments; the nine-step workflow; shot list, files, cuts and posts; full builds on the same track; weekly rhythm; definition of done; templates.
