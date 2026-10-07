@@ -14,7 +14,7 @@ Example ID throughout: `s01-cart-drawer-lag`. Replace it with yours — the ID i
 
 **Stores.** Every store command runs against **your own** demo dev store (`SHOPIFY_STORE` in `tools/shopify/.env.local`). Nothing here ever touches a live theme or publishes one.
 
-**Everything local, the Shopify way** (guideline §2, demo plan v1.2 §6.2). Shopify has no local store: a demo is built on your own dev store (`theme dev`) and captured and checked there, on its unpublished before and after themes — never through `theme dev`'s local preview. Nothing else: no tunnel, proxy, public URL, mail server or extra software; the toolkit's Chromium and Claude's built-in browser only. The order emails are read in the order's timeline in the admin; phone widths are emulated; Chrome only. The same steps work on macOS and on Windows (`docs/windows.md`, Asad's PC).
+**Everything local, the Shopify way** (guideline §2, demo plan v1.2 §6.2). Shopify has no local store: a demo is built on your own dev store (`theme dev`) and captured and checked there, on its unpublished before and after themes — never through `theme dev`'s local preview. Nothing else: no tunnel, proxy, public URL, mail server or extra software; the toolkit's Chromium and Claude's built-in browser only. Order emails are not checked — Shopify sends them, not the theme; phone widths are emulated; Chrome only. The same steps work on macOS and on Windows (`docs/windows.md`, Asad's PC).
 
 ---
 
@@ -228,9 +228,7 @@ New session:
 
 Check `media/raw/s01-cart-drawer-lag-after-*` and `-qa-*`. If a run fails, fix the theme or the script — never the footage.
 
-The order emails live in the order's timeline in the admin, where no script signs in. Sign in to your store's admin yourself in Claude's built-in browser (Claude Code never types a password), then ask *"Read the test order's timeline and its emails into `qa.md` row 2."* — or take stills of the timeline and the opened email by hand into `media/raw/s01-cart-drawer-lag-qa-order-timeline.png` and `-qa-order-email.png`. The timeline lists each email sent to the customer; its **View email** shows the subject, the delivery status and the text (never press Resend). Evidence only: the admin never goes in the video.
-
-**4b. QA sheet.** `qa.md`: all 17 rows, with evidence (a clip or screenshot filename in `media/raw/`, or pasted output). Includes the full purchase flow with a Bogus-gateway test order (card `1`) found in admin with its timeline, the theme editor pass and the scope diff (`tools/shopify/theme.sh diff s01-cart-drawer-lag --stat`). Every check is named as what it was ("360 / 390 / 768 px, emulated", "Chrome"); nothing claims a real device or a browser that was not run. A known defect is not a pass. Then: *"Log `QA passed` now."*
+**4b. QA sheet.** `qa.md`: all 17 rows, with evidence (a clip or screenshot filename in `media/raw/`, or pasted output). Includes the full purchase flow with a Bogus-gateway test order (card `1`) found in admin, the theme editor pass and the scope diff (`tools/shopify/theme.sh diff s01-cart-drawer-lag --stat`). Every check is named as what it was ("360 / 390 / 768 px, emulated", "Chrome"); nothing claims a real device or a browser that was not run. A known defect is not a pass. Then: *"Log `QA passed` now."*
 
 **4c. Handoff.** `handoff.md`: what changed · staging link ("Practice build on a Shopify development store; not publicly available." — no link: the store sits behind its password) · how to use it · rollback · what I'd flag to the client · warranty line. No walkthrough video (retired in guideline v1.2): the demo's one video is Stage 5's. Then: *"Log `Handoff sent` now."* **The clock stops.**
 

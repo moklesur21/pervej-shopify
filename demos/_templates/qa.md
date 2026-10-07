@@ -2,14 +2,14 @@
 
 The delivery checklist (demo plan §7, strategy §8.3) in rows 1–10, unchanged in order, then the Shopify additions from T7.2 in rows 11–17. Every line passes or the demo is not done; a known defect is not a pass. Evidence = a screenshot or a clip filename in `media/raw/`, or pasted output. Run it fresh, from this sheet, not from memory of the build (T7.2 §1.1).
 
-Checked where the demo runs, as the video guideline v1.2 §2 "Everything local" says: Shopify has no local store, so every check runs on the after theme on your own dev store, with nothing extra installed — no tunnel, public URL, mail server or other software. Name every check as what it was: phone widths are emulated (the toolkit opens widths under 768 px as a phone), Chrome is the only browser run; never "real device" or a browser that was not run. There is no walkthrough video (demo plan v1.2): the demo's one video is the LinkedIn video.
+Checked where the demo runs, as the video guideline v1.2 §2 "Everything local" says: Shopify has no local store, so every check runs on the after theme on your own dev store, with nothing extra installed — no tunnel, public URL, mail server or other software. Name every check as what it was: phone widths are emulated (the toolkit opens widths under 768 px as a phone), Chrome is the only browser run; never "real device" or a browser that was not run. Order emails are not checked: Shopify sends them, not the theme. A scope that changes what an email shows (a notification template, line-item properties, cart attributes, a checkout field) is a scoped item in row 1, checked under View email in the order's timeline. There is no walkthrough video (demo plan v1.2): the demo's one video is the LinkedIn video.
 
 Theme: `<id> · after` (#<theme id>) on <store> · Tester: <name> · Date: <date>
 
 | # | Item | Result | Evidence |
 |---|---|---|---|
 | 1 | Functional pass on the scoped items, including edge cases (list them; the Shopify set: empty metafield, sold-out variant, single-image product, 80-character title, no compare-at price, one-product collection, logged in and out) | | |
-| 2 | Full purchase flow with a test order: add to cart (product page, quick add / drawer) → cart (qty, remove, discount code) → checkout with an `@example.com` email → order placed with the test gateway (card `1`), order visible and correct in admin, its emails in the order's timeline (which email went to whom; View email: subject, delivery status, text — read in the admin by a person) | | |
+| 2 | Full purchase flow with a test order: add to cart (product page, quick add / drawer) → cart (qty, remove, discount code) → checkout with an `@example.com` email → order placed with the test gateway (card `1`), order visible and correct in admin | | |
 | 3 | Mobile 360 / 390 / 768 px, emulated (touch targets, sticky elements, drawer scroll-lock) | | |
 | 4 | Chrome | | |
 | 5 | `tools/shopify/theme.sh check <id>` — zero errors; warnings fixed or listed | | |
