@@ -152,6 +152,29 @@ test( 'a classic-accounts customer is signed in before recording; admin and admi
 	}
 } );
 
+test( 'an emulated phone opens past the password page on the theme; the sidecar times every click and typed stretch', async () => {
+	const cap = capture( 'qa', 'after' );
+	try {
+		const page = await cap.open( { device: 'iPhone 15' } );
+		assert.ok( await page.evaluate( () => navigator.maxTouchPoints > 0 ), 'the emulated phone has touch' );
+		await page.goto( cap.url( '/account/login' ) );
+		const field = 'input[name="customer[email]"]';
+		const sidecar = await cap.clip( page, 'phone-type', { ...QUICK, frame: 'column' }, async ( act ) => {
+			await act.click( field );
+			await act.type( field, 'test@example.com' );
+		} );
+		assert.equal( sidecar.device, 'iPhone 15' );
+		assert.equal( sidecar.theme.id, AFTER.id );
+		// A click, then type's own tap and its typed stretch: the render puts a click and typing there.
+		assert.deepEqual( sidecar.events.map( ( e ) => e.do ), [ 'click', 'click', 'type' ] );
+		const typed = sidecar.events[ 2 ];
+		assert.ok( typed.end > typed.t, `the typed stretch runs ${ typed.t }–${ typed.end } s` );
+		await assert.rejects( cap.open( { device: 'No Such Phone' } ), /Unknown device/ );
+	} finally {
+		await cap.close();
+	}
+} );
+
 test( 'Lighthouse measures the preview theme, not the password page', async () => {
 	const stem = path.join( root, 'lighthouse' );
 	const theme = previewTheme( demo, 'after' );

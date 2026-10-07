@@ -1,0 +1,38 @@
+{
+	"note": "The audio library the render mixes under the voice (video guideline §6 Sound): one music bed, three mouse clicks used in turn, one typing loop. Copied unchanged on 7 Oct 2026 from Yeasir's shared library (~/Music/PureDevs-Audio-Library, made with ElevenLabs Music and Sound Effects by the ch repo's audio-lib.mjs), so every machine renders the same sound. Never edit a file in place: a new sound is a new file with its own entry here. 'lufs' is each file's own integrated loudness, measured when it was made; 'mix' sets the levels render.mjs uses (the voice sits at -14 LUFS).",
+	"licence": "ElevenLabs self-serve paid plan, Yeasir's account: online and offline commercial use allowed (ads, social media, product demos), except film, TV, radio and studio games; no attribution required. Checked against the Eleven Music terms on 7 Oct 2026; re-check if the plan changes.",
+	"assets": {
+		"music": {
+			"file": "music/calm-minimal-01.mp3",
+			"lufs": -14.3,
+			"seconds": 150.05,
+			"model": "music_v2_5",
+			"made": "2026-10-07",
+			"prompt": "Calm, minimal instrumental background music for a software product demo video. Soft warm electric piano and gentle synth pads with sparse, light plucked notes. Slow steady pulse around 80 BPM. No drums, no percussion, no vocals, no build-ups or drops. Even dynamics from start to end, unobtrusive, modern, clean and quietly optimistic, made to sit under a voice-over."
+		},
+		"clicks": [
+			{ "file": "sfx/click-01.wav", "peak_db": -1, "seed": 11 },
+			{ "file": "sfx/click-02.wav", "peak_db": -1, "seed": 12 },
+			{ "file": "sfx/click-03.wav", "peak_db": -1, "seed": 13 }
+		],
+		"clickPrompt": "A single soft click of a computer mouse button, recorded close-up, dry, quiet room, no reverb, nothing else. (eleven_text_to_sound_v2, 0.6 s, prompt influence 0.7; trimmed to 0.15 s, peak -1 dBFS)",
+		"typing": {
+			"file": "sfx/typing-01.wav",
+			"lufs": -23.5,
+			"seconds": 6,
+			"seed": 21,
+			"prompt": "Soft typing on a quiet laptop keyboard at a steady, relaxed pace, recorded close-up, dry, no reverb, no mouse clicks, no voice. (eleven_text_to_sound_v2, 6 s, loopable)"
+		}
+	},
+	"mix": {
+		"voice_lufs": -14,
+		"music_lufs": -30,
+		"music_fade_in": 1.5,
+		"music_fade_out": 3,
+		"duck": "sidechaincompress=threshold=0.05:ratio=2.5:attack=80:release=1000",
+		"click_peak_db": -20,
+		"typing_lufs": -36,
+		"final_lufs": -14,
+		"final_tp": -1.5
+	}
+}

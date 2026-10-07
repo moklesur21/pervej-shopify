@@ -1,8 +1,8 @@
 {
   "name": "pervej-video-toolkit",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "Capture, slides, render and self-check for the demo video (asset/pervej-demo-video-guideline-v1.1.md §11).",
+  "description": "Capture, voice, slides, render and self-check for the demo video (asset/pervej-demo-video-guideline-v1.2.md §11).",
   "license": "UNLICENSED",
   "type": "module",
   "engines": {

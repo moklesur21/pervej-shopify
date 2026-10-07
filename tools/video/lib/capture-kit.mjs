@@ -6,7 +6,12 @@
  * real timing. Followable: a teal tap marker is drawn into the page during capture only, and actions
  * are paced. Clean: the store's password page is passed and the demo's preview theme opened before
  * anything is recorded, Shopify's preview bar is hidden, and every clip checks it is still on that
- * theme; credentials come from the environment. Every clip leaves a JSON sidecar the self-check reads.
+ * theme; credentials come from the environment. Every clip leaves a JSON sidecar the self-check reads,
+ * with the time of every click and typed stretch in it (the render puts the click and typing sounds there).
+ *
+ * QA where the demo runs (guideline §4): a page can open as an emulated phone or tablet (its screen,
+ * touch and user agent) in the same Chromium, on macOS and Windows alike, on the same dev store and
+ * preview theme. Never a real device or a tunnel, and qa.md names an emulation as one.
  */
 
 import fs from 'node:fs';
@@ -152,15 +157,25 @@ export class Capture {
 	 * @param {string|number} o.view     'desktop' (1280, default) · 'phone' (390) · 'tablet' (768) · a QA width (360, 390, 768).
 	 * @param {number}        o.scale    Device scale, 2 (default) or 3.
 	 * @param {string}        o.signIn   'customer' — signs in before anything is recorded.
+	 * @param {string}        o.device   An emulated phone or tablet, by Playwright's device name ('iPhone 15',
+	 *                                   'Pixel 7', 'iPad Mini'): its screen, touch and user agent, in place of view.
 	 * @return {Promise<import('playwright').Page>} Page, on the store's home page, past the password page, on the theme.
 	 */
-	async open( { view = 'desktop', scale = SCALE.min, signIn = null, ...rest } = {} ) {
+	async open( { view = 'desktop', scale = SCALE.min, signIn = null, device = null, ...rest } = {} ) {
 		if ( 'adminBar' in rest ) {
 			throw new Error( 'adminBar was a WordPress option: a Shopify storefront has no admin bar, and its preview bar is always hidden.' );
 		}
 		let viewport;
 		let name;
-		if ( typeof view === 'number' ) {
+		let emulate;
+		if ( device ) {
+			emulate = devices[ device ];
+			if ( ! emulate ) {
+				throw new Error( `Unknown device "${ device }": use a Playwright device name such as 'iPhone 15', 'Pixel 7' or 'iPad Mini'.` );
+			}
+			viewport = { ...emulate.viewport };
+			name = device;
+		} else if ( typeof view === 'number' ) {
 			viewport = { width: view, height: QA_HEIGHTS[ view ] || 900 };
 			name = `${ view }px`;
 		} else if ( VIEWS[ view ] ) {
@@ -172,19 +187,20 @@ export class Capture {
 		if ( ! Number.isInteger( scale ) || scale < SCALE.min || scale > SCALE.max ) {
 			throw new Error( `Device scale must be ${ SCALE.min } or ${ SCALE.max } (§4 "Sharp").` );
 		}
-		const mobile = viewport.width < 768;
+		const mobile = emulate ? emulate.isMobile : viewport.width < 768;
 		const context = await this.browser.newContext( {
 			viewport,
+			// The capture's own scale, not the device's: footage stays sharp and never scaled up (§4).
 			deviceScaleFactor: scale,
 			isMobile: mobile,
-			hasTouch: mobile,
-			userAgent: mobile ? devices[ 'Pixel 7' ].userAgent : undefined,
+			hasTouch: emulate ? emulate.hasTouch : mobile,
+			userAgent: emulate ? emulate.userAgent : ( mobile ? devices[ 'Pixel 7' ].userAgent : undefined ),
 			locale: 'en-US',
 			colorScheme: 'light',
 		} );
 		await context.addInitScript( hidePreviewBar );
 		const page = await context.newPage();
-		this.pages.set( page, { view: name, viewport, scale, context } );
+		this.pages.set( page, { view: name, viewport, scale, context, device } );
 		// Nothing of this is recorded: the password page, the preview session and any sign-in come first.
 		const password = storefrontPassword();
 		if ( password ) {
@@ -386,10 +402,20 @@ export class Capture {
 
 		const startedAt = new Date();
 		const url = page.url();
+		// Every click and typed stretch, on the same clock as the frames.
+		const events = [];
+		const now = () => ( performance.now() - t0 ) / 1000;
+		const mark = ( kind ) => {
+			const e = { do: kind, t: now() };
+			events.push( e );
+			return { end: () => {
+				e.end = now();
+			} };
+		};
 		let failure = null;
 		try {
 			await sleep( o.lead ?? 600 );
-			await steps( this.act( page, o.pace ?? 500 ) );
+			await steps( this.act( page, o.pace ?? 500, mark ) );
 			await sleep( o.tail ?? 800 );
 			// Still on the demo's theme, and no password page: otherwise the footage shows the wrong store.
 			await assertStorefront( page, this.theme, `Clip ${ name }, after its steps` );
@@ -450,6 +476,12 @@ export class Capture {
 			region,
 			display,
 			speed: Boolean( o.speed ),
+			// Seconds into the clip: a click sound on every click, typing under every typed stretch.
+			events: events.map( ( e ) => ( {
+				do: e.do,
+				t: Number( Math.max( 0, e.t - first ).toFixed( 3 ) ),
+				...( e.end === undefined ? {} : { end: Number( Math.max( 0, e.end - first ).toFixed( 3 ) ) } ),
+			} ) ),
 			frames: frames.length,
 			fps: Number( ( frames.length / seconds ).toFixed( 1 ) ),
 			maxGap: Number( maxGap.toFixed( 3 ) ),
@@ -464,6 +496,7 @@ export class Capture {
 			// pair recorded on one theme.
 			theme: theme ? { ...theme, label: this.theme?.label ?? 'live' } : null,
 			startedAt: startedAt.toISOString(),
+			device: meta.device || null,
 			browser: this.browser.version(),
 			// Fonts render differently on macOS and Windows, and each person captures on their own store: the check
 			// compares this so a before/after pair from two machines is caught.
@@ -484,9 +517,10 @@ export class Capture {
 	 *
 	 * @param {import('playwright').Page} page Page.
 	 * @param {number}                    pace Milliseconds between actions.
+	 * @param {Function}                  mark ( 'click' | 'type' ) → { end() } — logs the moment for the sound.
 	 * @return {object} Actions.
 	 */
-	act( page, pace ) {
+	act( page, pace, mark = () => ( { end() {} } ) ) {
 		const cap = this;
 		const loc = ( target ) => ( typeof target === 'string' ? page.locator( target ).first() : target );
 		const pause = ( ms = pace ) => page.waitForTimeout( ms );
@@ -503,6 +537,7 @@ export class Capture {
 			const p = await centre( locator );
 			await overlay( page, { kind: 'aim', ...p } );
 			await pause( 350 );
+			mark( 'click' );
 			await overlay( page, { kind: 'tap', ...p } );
 			await action( locator );
 			await pause();
@@ -512,7 +547,9 @@ export class Capture {
 			click: ( target, options ) => tapThen( target, ( l ) => l.click( options ) ),
 			type: ( target, text, { delay = 70 } = {} ) => tapThen( target, async ( l ) => {
 				await l.click();
+				const typing = mark( 'type' );
 				await l.pressSequentially( text, { delay } );
+				typing.end();
 			} ),
 			fill: ( target, value ) => tapThen( target, ( l ) => l.fill( value ) ),
 			select: ( target, value ) => tapThen( target, ( l ) => l.selectOption( value ) ),

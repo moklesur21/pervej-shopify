@@ -16,7 +16,10 @@ import { readText } from './paths.mjs';
 import { loadPackage } from './package.mjs';
 import { onScreenText, plain, tables, words } from './script.mjs';
 import { ffmpeg, FROM_YUV, probe } from './ffmpeg.mjs';
-import { CANVAS, FPS, MIN_PX, PACE, SPEC, STRIP } from './layout.mjs';
+import { CANVAS, FPS, MIN_PX, PACE, SPEC, STRIP, VOICE } from './layout.mjs';
+import { loudness } from './audio.mjs';
+import { config as voiceConfig } from './elevenlabs.mjs';
+import { spokenWordCount } from './voice.mjs';
 
 const BEGIN = '<!-- check:begin — written by tools/video/check.mjs; everything up to check:end is replaced on every run -->';
 const END = '<!-- check:end -->';
@@ -94,8 +97,10 @@ export async function runCheck( demo ) {
 	const mp4 = demo.finalFile( 'linkedin.mp4' );
 	const cut = Boolean( manifest && manifest.script === pkg.scriptSha && fs.existsSync( mp4 ) );
 	const usedClips = [ ...new Set( scenes.flatMap( ( s ) => s.shots.filter( ( shot ) => shot.kind === 'clip' ).map( ( shot ) => shot.name ) ) ) ];
-	const texts = scenes.map( ( s ) => ( { scene: s, texts: onScreenText( s, brand ) } ) );
-	const allScreen = texts.flatMap( ( t ) => t.texts );
+	// What the viewer reads, and — for sources, banned words and leaks — what the voice says too.
+	const texts = scenes.map( ( s ) => ( { scene: s, texts: [ ...onScreenText( s, brand ), ...( s.spoken ? [ s.spoken ] : [] ) ] } ) );
+	const allScreen = scenes.flatMap( ( s ) => onScreenText( s, brand ) );
+	const allSpoken = scenes.map( ( s ) => s.spoken ).filter( Boolean );
 	const post = copy.post || '';
 	const postLines = copy.lines.map( ( l ) => l.trim() );
 
@@ -178,7 +183,7 @@ export async function runCheck( demo ) {
 				}
 			}
 		}
-		rows.push( row( 'Sources', problems.length ? 'FAIL' : 'PASS', problems.length ? problems.join( '; ' ) : `${ checked } numbers, times and quotes found verbatim in their source files` ) );
+		rows.push( row( 'Sources', problems.length ? 'FAIL' : 'PASS', problems.length ? problems.join( '; ' ) : `${ checked } numbers, times and quotes on screen and in the Spoken words found verbatim in their source files` ) );
 	}
 
 	// Timeline.
@@ -186,7 +191,7 @@ export async function runCheck( demo ) {
 		const log = file( 'log.md' ) || '';
 		const spec = file( 'spec.md' ) || '';
 		const problems = [];
-		const times = [ ...new Set( [ ...allScreen, post ].flatMap( ( t ) => t.match( TIME ) || [] ) ) ];
+		const times = [ ...new Set( [ ...allScreen, ...allSpoken, post ].flatMap( ( t ) => t.match( TIME ) || [] ) ) ];
 		for ( const t of times ) {
 			if ( ! has( log, t ) ) {
 				problems.push( `${ t } is not in log.md` );
@@ -226,12 +231,12 @@ export async function runCheck( demo ) {
 		texts.forEach( ( { scene, texts: list } ) => list.forEach( ( t ) => scan( `scene ${ scene.n }`, t, BANNED ) ) );
 		scan( 'copy', post, [ ...BANNED, ...COPY_ONLY ] );
 		copy.alternatives.forEach( ( a, i ) => scan( `alternative ${ i + 1 }`, a, BANNED ) );
-		rows.push( row( 'Banned words', hits.length ? 'FAIL' : 'PASS', hits.length ? hits.join( '; ' ) : 'none of the §2 words in the lines, slides, end card or copy; no emoji, hashtags or tags in the copy' ) );
+		rows.push( row( 'Banned words', hits.length ? 'FAIL' : 'PASS', hits.length ? hits.join( '; ' ) : 'none of the §2 words in the lines, slides, end card, Spoken words or copy; no emoji, hashtags or tags in the copy' ) );
 	}
 
 	// Leaks.
 	{
-		const hits = [ ...allScreen, post ].filter( ( t ) => LEAK.test( t ) ).map( ( t ) => `"${ t.match( LEAK )[ 0 ] }" in "${ t.slice( 0, 50 ) }"` );
+		const hits = [ ...allScreen, ...allSpoken, post ].filter( ( t ) => LEAK.test( t ) ).map( ( t ) => `"${ t.match( LEAK )[ 0 ] }" in "${ t.slice( 0, 50 ) }"` );
 		if ( hits.length ) {
 			rows.push( row( 'Leaks', 'FAIL', `path, URL or email in text: ${ hits.join( '; ' ) }` ) );
 		} else if ( ! cut ) {
@@ -397,6 +402,45 @@ export async function runCheck( demo ) {
 		rows.push( row( 'Spec', '—', `checked on the rendered file; the plan runs ${ plan.total.toFixed( 1 ) } s` ) );
 	}
 
+	// Voice: every video is voiced from the approved Spoken words (§10), every pick word for word.
+	{
+		const v = pkg.voice;
+		if ( ! v.chunks.length ) {
+			rows.push( row( 'Voice', 'FAIL', 'post/script.md has no Spoken words — every video is voiced (§10): add the Spoken column' ) );
+		} else if ( ! v.made ) {
+			rows.push( row( 'Voice', '—', `${ v.chunks.length } scene(s) to voice after Approval 1: node tools/video/voice.mjs ${ demo.id }` ) );
+		} else if ( v.problems.length ) {
+			rows.push( row( 'Voice', 'FAIL', v.problems.join( '; ' ) ) );
+		} else {
+			const p = v.state.processed;
+			const listen = v.flags.length ? `; listen to ${ v.flags.join( '; ' ) }` : '';
+			rows.push( row( 'Voice', 'PASS', `${ v.map.size } scene(s), ${ voiceConfig.voice_name } (${ voiceConfig.tts_model_id }); every pick reads the approved words (word check ≥ ${ voiceConfig.min_accuracy * 100 } %, no clipped ending); one chain at ${ p.lufs } LUFS${ listen }` ) );
+		}
+	}
+
+	// Sound: the finished mix on the rendered file.
+	if ( cut && manifest.sound?.voiced ) {
+		const problems = [];
+		const info = await probe( mp4 );
+		const a = info.streams.find( ( s ) => s.codec_type === 'audio' );
+		const L = await loudness( mp4 );
+		if ( a?.codec_name !== 'aac' || Number( a?.sample_rate ) !== SPEC.sampleRate || a?.channels !== 2 ) {
+			problems.push( `${ a?.codec_name } ${ a?.sample_rate } Hz ${ a?.channels } ch, not AAC 48 kHz stereo` );
+		}
+		if ( ! ( Math.abs( L.I - SPEC.lufs ) <= SPEC.lufsTolerance ) ) {
+			problems.push( `${ L.I } LUFS, not ${ SPEC.lufs } ±${ SPEC.lufsTolerance }` );
+		}
+		if ( ! ( L.TP <= SPEC.truePeak ) ) {
+			problems.push( `true peak ${ L.TP } dBTP, above ${ SPEC.truePeak }` );
+		}
+		const s = manifest.sound;
+		rows.push( row( 'Sound', problems.length ? 'FAIL' : 'PASS', problems.length ? problems.join( '; ' ) : `${ L.I } LUFS · true peak ${ L.TP } dBTP · AAC 48 kHz stereo · voice in ${ s.voice.length } scene(s), the music bed under it, ${ s.clicks } click(s), ${ s.typing } typed stretch(es) — heard once at Approval 2` ) );
+	} else if ( cut ) {
+		rows.push( row( 'Sound', 'FAIL', 'the render is silent: make the voice, then render again' ) );
+	} else {
+		rows.push( row( 'Sound', '—', 'measured on the rendered file' ) );
+	}
+
 	// Word counts.
 	{
 		const problems = [];
@@ -417,7 +461,11 @@ export async function runCheck( demo ) {
 		if ( l1.length + l2.length >= 150 ) {
 			problems.push( `copy lines 1 and 2 are ${ l1.length + l2.length } characters, not under 150` );
 		}
-		rows.push( row( 'Word counts', problems.length ? 'FAIL' : 'PASS', problems.length ? problems.join( '; ' ) : `${ onScreen } words on screen · copy ${ copyWords } words · lines 1 + 2 ${ l1.length + l2.length } characters` ) );
+		const spoken = spokenWordCount( script );
+		if ( spoken > VOICE.maxWords ) {
+			problems.push( `${ spoken } words spoken, more than ${ VOICE.maxWords }` );
+		}
+		rows.push( row( 'Word counts', problems.length ? 'FAIL' : 'PASS', problems.length ? problems.join( '; ' ) : `${ onScreen } words on screen · ${ spoken } spoken · copy ${ copyWords } words · lines 1 + 2 ${ l1.length + l2.length } characters` ) );
 	}
 
 	// First line and close.
@@ -431,6 +479,11 @@ export async function runCheck( demo ) {
 		}
 		if ( last && last.line !== brand.ask ) {
 			problems.push( `the last scene's line is not the approved ask ("${ brand.ask }")` );
+		}
+		// Words only: a pause ("...") may stand where the ask has a comma.
+		const said = ( s ) => s.toLowerCase().replace( /[^\p{L}\p{N}']+/gu, ' ' ).trim();
+		if ( last?.spoken && ! said( last.spoken ).endsWith( said( brand.ask ) ) ) {
+			problems.push( `the last scene's Spoken words do not end on the approved ask ("${ brand.ask }")` );
 		}
 		if ( ! last || last.shots[ last.shots.length - 1 ]?.kind !== 'endcard' ) {
 			problems.push( 'the video does not end on the end card' );

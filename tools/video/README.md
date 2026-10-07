@@ -1,8 +1,8 @@
 # tools/video — the video toolkit
 
-Turns a finished demo into Thursday's LinkedIn video, as `asset/pervej-demo-video-guideline-v1.1.md` describes (§4 capture, §5 script, §6 the edit, §8 the self-check, §11 this toolkit). Three commands do it: **capture** records the storefront, **render** cuts the approved script into the video, **check** writes the self-check into `post/check.md`. When and by whom each runs is `docs/demo-procedure.md` (Stages 2b, 4a, 5).
+Turns a finished demo into Thursday's LinkedIn video, as `asset/pervej-demo-video-guideline-v1.2.md` describes (§4 capture, §5 script, §6 the edit, §8 the self-check, §10 the voice, §11 this toolkit). Four commands do it: **capture** records the storefront, **voice** reads the approved Spoken words in Yeasir's own voice, **render** cuts the approved script into the voiced video, **check** writes the self-check into `post/check.md`. When and by whom each runs is `docs/demo-procedure.md` (Stages 2b, 4a, 5). It runs the same on macOS and Windows; `docs/windows.md` is the Windows setup.
 
-Free, openly licensed tools only: Playwright and Lighthouse (Apache-2.0), ffmpeg (LGPL/GPL), IBM Plex Sans (SIL OFL 1.1, bundled in `slides/fonts/` with its licence).
+Free, openly licensed tools: Playwright and Lighthouse (Apache-2.0), ffmpeg (LGPL/GPL), IBM Plex Sans (SIL OFL 1.1, bundled in `slides/fonts/` with its licence). One paid service: ElevenLabs, on Yeasir's account, for the voice. The music bed, clicks and typing in `audio/` were made with it and are licensed for commercial use (`audio/audio.json`).
 
 ## Install — once per machine
 
@@ -24,7 +24,17 @@ It installs the pinned packages into `tools/video/node_modules/` (git-ignored, a
 npm --prefix tools/video run doctor
 ```
 
-Every line should read `[ok]`. The store lines are only warnings: rendering does not need the store, capturing does. With `tools/shopify/.env.local` filled in, the storefront-password line proves a fresh browser gets past your dev store's password page.
+Every line should read `[ok]`. Some lines are only warnings: the store lines (rendering does not need the store, capturing does) and the ElevenLabs key (only the voice needs it). With `tools/shopify/.env.local` filled in, the storefront-password line proves a fresh browser gets past your dev store's password page. If the Node line says it is too old, upgrade Node (`brew upgrade node` · `winget upgrade --id OpenJS.NodeJS.LTS -e`), open a new terminal, then `npm --prefix tools/video ci`.
+
+Nothing else is installed: no other browser, no mail server, no tunnel, no Python. Phone checks are the 360, 390 and 768 px widths in the same Chromium, which opens every width under 768 px as a phone (touch, mobile user agent) — looked at by eye in Claude's built-in browser if wanted; the order emails are read in the order's timeline in the Shopify admin.
+
+**The voice key — once per machine that makes the voice.** Yeasir creates an API key in ElevenLabs restricted to **Text to Speech** and **Speech to Text**, with a monthly credit cap (one key per machine, so one can be revoked alone). It never goes in a file in the repo and is never shown to Claude Code; the person types it once:
+
+| macOS — the Keychain (the same entry the ch repo uses) | Windows — a user environment variable, in PowerShell, then open a new terminal |
+|---|---|
+| `security add-generic-password -a "$USER" -s elevenlabs-api -w` | `$k = Read-Host "ElevenLabs key" -AsSecureString; [Environment]::SetEnvironmentVariable("ELEVENLABS_API_KEY", [Net.NetworkCredential]::new("", $k).Password, "User")` |
+
+Both ask for the key, so it stays out of the shell history. The doctor says where it found one, never what it is. The key belongs to the machine, not the repo: one stored for `pervej-woo` already works here.
 
 **Windows notes**
 - winget puts ffmpeg on the user PATH, which terminals opened before the install don't see. The toolkit also looks in winget's install folder itself; `FFMPEG_PATH` / `FFPROBE_PATH` override both.
@@ -39,7 +49,8 @@ Every line should read `[ok]`. The store lines are only warnings: rendering does
 | 4a — after clips, same script | `node tools/video/capture.mjs <id> after` | `media/raw/<id>-after-*` |
 | 4a — the QA run | `node tools/video/capture.mjs <id> qa` | `media/raw/<id>-qa-*` |
 | 5a — the self-check before Approval 1 | `node tools/video/check.mjs <id>` | `post/check.md` |
-| 5b — after Approval 1 | `node tools/video/render.mjs <id>` | `media/final/`, `media/render/`, `post/check.md` |
+| 5b — after Approval 1: the voice | `node tools/video/voice.mjs <id>` (`--dry` first shows what it will send) | `media/voice/` |
+| 5b — after Approval 1: the video | `node tools/video/render.mjs <id>` | `media/final/`, `media/render/`, `post/check.md` |
 
 Capture runs on the preview themes on **your** dev store: push them first — `tools/shopify/theme.sh push <id> before` before the before clips, `… push <id> after` before the after and QA clips. Capture reads their IDs from `media/themes.json` and refuses to start without them.
 
@@ -66,7 +77,7 @@ export default async function ( cap ) {
 
 | Call | What it does |
 |---|---|
-| `cap.open( { view, scale, signIn } )` | A fresh browser context (clean profile), already past the store's password page and on this phase's preview theme, open on the home page. `view`: `'desktop'` (1280 × 800, the default), `'phone'` (390, only for a mobile problem), `'tablet'` (768) or a QA width (`360`, `390`, `768`). `scale`: 2 (default) or 3. `signIn: 'customer'` signs a classic-accounts test customer in before anything is recorded; new customer accounts (a code by email) and the Shopify admin can't be scripted, and say so. Shopify's preview bar is always hidden. |
+| `cap.open( { view, scale, signIn, device } )` | A fresh browser context (clean profile), already past the store's password page and on this phase's preview theme, open on the home page. `view`: `'desktop'` (1280 × 800, the default), `'phone'` (390, only for a mobile problem), `'tablet'` (768) or a QA width (`360`, `390`, `768`). `scale`: 2 (default) or 3. `signIn: 'customer'` signs a classic-accounts test customer in before anything is recorded; new customer accounts (a code by email) and the Shopify admin can't be scripted, and say so. Shopify's preview bar is always hidden. `device`: an emulated phone or tablet by Playwright's name (`'iPhone 15'`, `'Pixel 7'`, `'iPad Mini'`) — its screen size, touch and user agent, in place of `view`. Optional: the 360 / 390 / 768 widths already open as a phone. |
 | `cap.clip( page, name, options, async ( act ) => { … } )` | Records `media/raw/<id>-<phase>-<name>.mp4` and a `.json` sidecar. Same name, same steps in every phase. Refuses to keep footage when the page is on the password page or on another theme than the phase's, before or after the steps; the sidecar records the theme. |
 | `cap.still( page, name, { frame } \| { fullPage: true } )` | A PNG for evidence in `qa.md`. |
 | `cap.lighthouse( path, { runs, categories, name } )` | Three runs (odd numbers only), each in a fresh browser profile that first gets past the password page and opens the preview theme, then measures in that same browser (the method of Shopify's own Lighthouse CI): mobile, Lighthouse's default simulated throttling, dev store preview. Keeps every report and writes `<id>-<phase>-lighthouse-<page>.json` with the middle score; prints the line for `qa.md` row 8. |
@@ -82,7 +93,9 @@ export default async function ( cap ) {
 - `speed: true` — a loading or checkout clip. The check makes sure it plays uncut, at real speed.
 - `pace` (500 ms between actions), `lead` (600 ms before the first action), `tail` (800 ms after the last).
 
-**Actions** (`act.*`): `click`, `type` (key by key), `fill`, `select`, `check`, `hover`, `press`, `scroll( px \| selector )`, `goto`, `wait( ms )`, `waitFor`, `outline( selector )` (the one teal highlight; a new one replaces the last), `clearOutline`, and `act.page` for anything else. Each click shows a teal tap marker drawn into the page during capture only, never into site code.
+**Actions** (`act.*`): `click`, `type` (key by key), `fill`, `select`, `check`, `hover`, `press`, `scroll( px \| selector )`, `goto`, `wait( ms )`, `waitFor`, `outline( selector )` (the one teal highlight; a new one replaces the last), `clearOutline`, and `act.page` for anything else. Each click shows a teal tap marker drawn into the page during capture only, never into site code. The sidecar's `events` log the time of every tap (`click`, `type`, `fill`, `select`, `check`) and every typed stretch (`type`); the render puts a soft click and quiet typing there. A clip captured before this existed simply has no click sounds.
+
+**QA on your dev store, nothing extra.** Shopify has no local store: the QA run (`capture/qa.mjs`) runs where the after clips do, on the after theme on your own dev store, behind its password — never through `theme dev`'s local preview, which is for building. Phones: `cap.open( { view: 360 } )`, `390` and `768` — emulated widths, which `qa.md` calls "emulated"; `device: 'iPhone 15'` is there if a brief ever needs one named phone, never required. Emails: place the test order with an `@example.com` customer email (Shopify's advice for test orders); the order's **Timeline** in the Shopify admin then lists the customer notifications Shopify sent for it — which email, to whom — but not their text, and not the staff notifications. No script signs in to the admin (two-step verification), so a person reads it: sign in to the admin yourself in Claude's built-in browser and Claude Code copies the timeline lines into `qa.md` row 2, or take a still by hand into `media/raw/<id>-qa-order-timeline.png`. It is evidence, never footage. Browsers: Chrome (the toolkit's Chromium); nothing else is installed. No tunnel, proxy or public URL, ever.
 
 **What it enforces.** Frames are timestamped screenshots at 2–3× device scale, assembled by ffmpeg at their real timing (§4 "Sharp"); Playwright's video recorder is never used. A frame that would need scaling up is refused. A step that throws discards the footage (§4 "Honest"). Every clip prints its frame rate, its longest single frame (a page load shows up there), and the smallest site text inside the frame. If that text lands under 32 px on the canvas, frame narrower or cut the shot: a 400 px frame at `{ scale: 3 }` puts 16 px text at 43 px.
 
@@ -92,17 +105,17 @@ export default async function ( cap ) {
 
 ## The script the render reads — `post/script.md`
 
-It is still the guideline's one table, a row per scene. The **On screen** cell is written so the render can follow it exactly. That way, what Yeasir approves is what gets rendered. The guideline's §5 example (invented values, to show the shape only):
+It is still the guideline's one table, a row per scene. The **On screen** cell is written so the render can follow it exactly, and the **Spoken** cell is exactly what the voice reads. That way, what Yeasir approves is what gets voiced and rendered. The guideline's §5 example (invented values, to show the shape only):
 
-| # | Sec | On screen | Line in the bottom band | Source |
-|---|---|---|---|---|
-| 1 | 0–5 | Clip before-coupon-spins (wide first) — a still of the whole checkout with the summary outlined, then the summary up close as the spinner keeps turning | Checkout spins forever when a coupon is applied. | brief |
-| 2 | 5–13 | Slide: *Brief received Mon 10:04* *A marketing agency, for a skincare brand on WooCommerce* *Needed by Wed, end of day* | The brief. | brief · `log.md` |
-| 3 | 13–25 | Questions: *Every coupon, or only some? — Every coupon.* *What changed last week? — One plugin update.* *Answered Mon 14:10* Then Slide: *Plan approved Mon 15:00* *Delivery promised Wed, end of day* | Two questions before touching anything. | brief · plan · `log.md` |
-| 4 | 25–45 | Slide: *Two scripts were refreshing the order total at the same time.* Then Clip after-coupon-spins | One fix, in a small plugin. Nothing else on checkout changed. | `handoff.md` |
-| 5 | 45–62 | Clip qa-test-order Then Checklist: *Desktop and 360 · 390 · 768 px* *Lighthouse mobile 71 before, 74 after* *Tracking still fires* | Checked before the agency sees it. | `qa.md` |
-| 6 | 62–78 | Timeline: *Brief Mon 10:04* *Questions answered Mon 14:10* *Staging Tue 18:30* *QA passed Wed 11:00* *Handed over Wed 15:10* Then Checklist: *Staging link* *Handover note* *Rollback note* | Promised Wednesday, end of day. Delivered Wednesday 15:10. | `log.md` · `handoff.md` · plan |
-| 7 | 78–90 | Slide: *What I'd flag to the client: coupons failed for a week. Worth checking that week's abandoned carts.* Then End card | When the next one lands, message me. | `handoff.md` |
+| # | Sec | On screen | Line in the bottom band | Spoken | Source |
+|---|---|---|---|---|---|
+| 1 | 0–5 | Clip before-coupon-spins (wide first) — a still of the whole checkout with the summary outlined, then the summary up close as the spinner keeps turning | Checkout spins forever when a coupon is applied. | Checkout spun forever whenever a coupon was applied. | brief |
+| 2 | 5–13 | Slide: *Brief received Mon 10:04* *A marketing agency, for a skincare brand on WooCommerce* *Needed by Wed, end of day* | The brief. | The brief came in on Monday morning, from an agency, needed by the end of Wednesday. | brief · `log.md` |
+| 3 | 13–25 | Questions: *Every coupon, or only some? — Every coupon.* *What changed last week? — One plugin update.* *Answered Mon 14:10* Then Slide: *Plan approved Mon 15:00* *Delivery promised Wed, end of day* | Two questions before touching anything. | Before touching anything, I asked two questions... and had the plan approved that afternoon. | brief · plan · `log.md` |
+| 4 | 25–45 | Slide: *Two scripts were refreshing the order total at the same time.* Then Clip after-coupon-spins | One fix, in a small plugin. Nothing else on checkout changed. | Two scripts were refreshing the order total at once. One small fix, and nothing else on checkout changed. | `handoff.md` |
+| 5 | 45–62 | Clip qa-test-order Then Checklist: *Desktop and 360 · 390 · 768 px* *Lighthouse mobile 71 before, 74 after* *Tracking still fires* | Checked before the agency sees it. | Then a real test order with a coupon, every screen size, and the speed before and after. | `qa.md` |
+| 6 | 62–78 | Timeline: *Brief Mon 10:04* *Questions answered Mon 14:10* *Staging Tue 18:30* *QA passed Wed 11:00* *Handed over Wed 15:10* Then Checklist: *Staging link* *Handover note* *Rollback note* | Promised Wednesday, end of day. Delivered Wednesday 15:10. | Promised for the end of Wednesday... handed over that afternoon, with a rollback note. | `log.md` · `handoff.md` · plan |
+| 7 | 78–90 | Slide: *What I'd flag to the client: coupons failed for a week. Worth checking that week's abandoned carts.* Then End card | When the next one lands, message me. | One thing worth flagging: coupons failed for a week. When the next one lands, message me. | `handoff.md` |
 
 Cover: before-coupon-spins at 4 s
 
@@ -128,13 +141,25 @@ Anything after the brackets describes the clip for the reader and is never shown
 
 **Line in the bottom band.** At most two lines at 48 px. The render refuses a line that runs longer.
 
-**Source.** `brief`, `plan` (meaning `spec.md`), `log`, `qa`, `handoff`, or file names in backticks. The check looks for every number, time and quote of that scene in these files.
+**Spoken.** What the voice says over the scene (guideline §5, §10): one or two natural sentences, the same facts as the screen, at most 160 words in all; `—` for a scene with nothing said. Times in words ("Monday morning") — the script refuses a clock time, which the voice reads as "fifteen hundred". `...` for a pause. No exclamation marks. The last scene's words end on the approved ask. A name the voice gets wrong goes in a table under the script, then Approval 1 again:
+
+```markdown
+## Pronunciation
+
+| Term | Say as |
+|---|---|
+| WooCommerce | Woo Commerce |
+```
+
+The voice is sent "Say as"; the word check still listens for the term.
+
+**Source.** `brief`, `plan` (meaning `spec.md`), `log`, `qa`, `handoff`, or file names in backticks. The check looks for every number, time and quote of that scene, on screen and in the Spoken words, in these files.
 
 **Timing** is computed, never typed:
 - A slide step stays up one second per three words, never under 2.5 s.
 - A clip runs its real length; `×2` halves it.
 - A wide still runs 1 s; the end card 3.5 s.
-- A scene too short to read its line in is lengthened.
+- A scene too short to read its line in, or to fit its voice (0.3 s in, 0.5 s after), is lengthened: across its slide steps, or by holding its last clip frame.
 
 The Sec column is a guide; the check reports the real timings. The render refuses any scene over 20 s and any video over 90 s.
 
@@ -170,7 +195,7 @@ The fenced block is the post, exactly as the VA pastes it. The render copies it 
 - `## Looked at` — checks a person has done by eye.
 - `## Approvals` — where Yeasir writes `Approved 1 — <Day HH:MM> · Yeasir` and, later, `Approved 2 — …`.
 
-The rows are the ten of §8, plus two from the writing and editing rules:
+The rows are the twelve of §8, plus two from the writing and editing rules:
 
 | Row | Passes when |
 |---|---|
@@ -183,8 +208,10 @@ The rows are the ten of §8, plus two from the writing and editing rules:
 | View | The clips match the brief's **View:** line. Every desktop clip is framed. |
 | Legibility | Site text inside every frame is ≥ 32 px on the canvas, and no footage is scaled up. After the render: label ≥ 30 px, line ≥ 48, slides and marks ≥ 36. |
 | Spec | After the render: 1080 × 1080, ≤ 90 s, H.264 yuv420p, 30 fps, AAC track, under 200 MB, cover under 2 MB, and the first frame is scene 1 footage with the problem line. |
-| Word counts | ≤ 180 words on screen. Copy is 80–130 words. Copy line 1 is ≤ 80 characters, and lines 1 and 2 together are under 150. |
-| First line and close | The video and the copy open on the same sentence and close on the approved ask. The video ends on the end card. There are two alternative first lines. |
+| Voice | The script has Spoken words; every scene's pick was made from the approved words and heard word for word by speech-to-text (≥ 98 %, no clipped ending); one loudness chain. `—` until `voice.mjs` has run. |
+| Sound | After the render: AAC 48 kHz stereo, −14 LUFS ±0.5, true peak ≤ −1 dBTP, with the voice, the music bed, clicks and typing in it. |
+| Word counts | ≤ 180 words on screen, ≤ 160 spoken. Copy is 80–130 words. Copy line 1 is ≤ 80 characters, and lines 1 and 2 together are under 150. |
+| First line and close | The video and the copy open on the same sentence and close on the approved ask, on screen and in the Spoken words. The video ends on the end card. There are two alternative first lines. |
 | Pace | Every slide step gets its reading time. Nothing still sits unchanged for much more than 5 s. Scene timings are shown against the guide. |
 
 A **LOOK** row is recorded like this, under `## Looked at`:
@@ -193,11 +220,26 @@ A **LOOK** row is recorded like this, under `## Looked at`:
 | Leaks | 98c7b9a | PASS | Claude Code · Thu 16:10 | 5 sheets, 67 frames: no tooling, paths, names or emails |
 ```
 
+## The voice — `voice.mjs`
+
+```bash
+node tools/video/voice.mjs <id> --dry          # the scenes and the characters it will send; no API call
+node tools/video/voice.mjs <id>                # a take per scene → word check → one loudness chain
+node tools/video/voice.mjs <id> --redo s3      # a new take for scene 3 (old takes kept)
+node tools/video/voice.mjs <id> --pick s3=t1   # bring back a stored take (no API call)
+node tools/video/voice.mjs <id> --process      # the loudness chain only
+```
+
+It refuses unless Approval 1 is committed and the words are unchanged since, exactly like the render. Each scene's Spoken words go to ElevenLabs with Yeasir's clone and the locked choices in `voice.json` (Eleven v4, Stability 0.5, Similarity 0.75, the `[thoughtful]` delivery tag), a fixed seed, and the previous scene's take (request stitching, so the read flows). Every take is transcribed and compared word for word with the approved words — numbers and spelled-out names normalised, so "51" matches "fifty-one". A take with a word missing, added or changed, or a clipped ending gets up to two more; tone is never retried by machine. Then one gate → compressor → gain → limiter chain over the whole voice, joined, trimmed to −14 LUFS and split back per scene.
+
+Only scenes whose words changed get new takes, so a one-sentence change costs one scene. Everything lands in `media/voice/` (git-ignored): `takes/s<N>-tN.mp3`, `takes.json` (seeds, request ids, credits, the word check, the pick), and `<id>-voice-s<N>.wav`. A run prints what to listen to if any pick carries a note.
+
 ## Render
 
 Render refuses unless all of these hold:
 - `post/check.md` has an `Approved 1` line that is committed.
 - `post/script.md` and `post/copy.md` are unchanged since that commit (any change to the words goes back to Approval 1).
+- The voice was made from those approved words, every scene's pick passed the word check (when the script has Spoken words — every video does, §10).
 - Every named clip exists in `media/raw/`.
 - Every line and slide fits at its minimum size.
 
@@ -205,7 +247,7 @@ It writes to `media/final/` (§11):
 
 | File | What |
 |---|---|
-| `<id>-linkedin.mp4` | 1080 × 1080, H.264 (CRF 16, yuv420p, BT.709), 30 fps, silent AAC track, faststart |
+| `<id>-linkedin.mp4` | 1080 × 1080, H.264 (CRF 16, yuv420p, BT.709), 30 fps, AAC 48 kHz stereo at −14 LUFS, faststart |
 | `<id>-cover.png` | The cover frame, with the label and the problem line |
 | `<id>-contact-N.png` | A frame every second, 16 to a sheet, each sheet printed with the render hash |
 | `<id>-timeline.png` | The full timeline slide, when the script has one |
@@ -220,14 +262,17 @@ The frame (§6, numbers in `lib/layout.mjs`):
 
 Palette: navy `#0F172A`, white, pale grey `#F1F5F9`, and teal `#06C5BE` for markers and outlines only. One typeface: IBM Plex Sans. Each shot is encoded once with identical settings, and the shots are joined without re-encoding.
 
-Voice-over fitting (§10) is not built yet: the video ships silent.
+**The sound** (§6, levels in `audio/audio.json` → `mix`): each scene's voice starts 0.3 s into its scene; the music bed (`audio/music/`) runs under the whole video at −30 LUFS, faded in over 1.5 s and out over the last 3 s, and ducked by the voice (sidechain compression); a click (the three in `audio/sfx/`, in turn) peaks at −20 dBFS on every logged tap; the typing loop sits at −36 LUFS under every typed stretch; both follow each shot's trim and ×2. The mix is normalised to −14 LUFS, true peak −1.5 dBTP, in two linear passes, then muxed with the picture, which is copied untouched. The graph is kept as `media/render/soundtrack.filter.txt`. Changing a level is a shared change: it applies to every video.
 
 ## Files here
 
 | Path | What |
 |---|---|
-| `capture.mjs`, `render.mjs`, `check.mjs`, `doctor.mjs` | The commands |
+| `capture.mjs`, `voice.mjs`, `render.mjs`, `check.mjs`, `doctor.mjs` | The commands |
 | `brand.json` | The label, the approved ask, the end card (name, title, URL — `null` until pervej.com is live) |
+| `voice.json` | The voice's locked choices: the clone, model, settings, takes, the word-check bar, the loudness chain. No secrets |
+| `audio/` | The music bed, clicks and typing, with `audio.json`: each file's prompt, level and licence, and the mix levels |
+| `lib/elevenlabs.mjs`, `lib/voice.mjs`, `lib/audio.mjs` | The API and the word check; the voice state the render and check read; loudness, the voice chain and the mix |
 | `lib/layout.mjs` | Every size, colour and pace number |
 | `lib/capture-kit.mjs`, `lib/lighthouse.mjs` | Capture helpers |
 | `lib/script.mjs`, `lib/package.mjs` | Reading `script.md` and `copy.md`, timing the shots |
@@ -255,4 +300,8 @@ Changing the look, the words in `brand.json` or a rule is a shared change: a `ch
 | "no password form this toolkit recognises" | The theme's password template has no `form[action*="password"]`; the standard Dawn and Horizon templates have one. |
 | "smallest text … under 32" | Frame narrower (`{ selector, width: 400 }` with `cap.open( { scale: 3 } )`) or drop the shot. |
 | Low fps or a long single frame | A page load holds the last frame. Judge it at the pilot (§14.1); the sidecar keeps `fps` and `maxGap`. |
-| `Not rendered — …` | The message says what to fix: an unparsed shot, a missing clip, a missing or uncommitted approval, words changed since approval, too long. |
+| `Not rendered — …` | The message says what to fix: an unparsed shot, a missing clip, a missing or uncommitted approval, words changed since approval, the voice missing or made from other words, too long. |
+| `No ElevenLabs API key on this machine` | Store it once (Install, above). The doctor shows whether one is found. |
+| `ElevenLabs … 401` | The key lacks a permission: it needs Text to Speech and Speech to Text. |
+| A scene fails the word check after its retries | Read the differences printed: a transcription spelling of a name (add it to `keyterms` in `voice.json`, a shared change) or a real dropped word (`--redo` the scene). A clock time in Spoken is refused before anything is sent. |
+| "say a time in words in Spoken" | Write the time as words ("Wednesday afternoon"); the exact time stays on screen. |

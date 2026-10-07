@@ -8,6 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { brand, readText } from './paths.mjs';
 import { parseCopy, parseScript, plan } from './script.mjs';
+import { currentVoice } from './voice.mjs';
 
 /** Short hash of a text file's content; line endings normalised, so a CRLF checkout is the same script. */
 export const sha = ( text ) => crypto.createHash( 'sha1' ).update( text.replace( /\r\n/g, '\n' ) ).digest( 'hex' ).slice( 0, 7 );
@@ -26,7 +27,7 @@ export function loadPackage( demo ) {
 	if ( copyMd === null ) {
 		errors.push( 'post/copy.md does not exist yet.' );
 	}
-	const script = scriptMd === null ? { scenes: [], cover: null, errors: [] } : parseScript( scriptMd );
+	const script = scriptMd === null ? { scenes: [], cover: null, pronunciation: [], spokenColumn: false, errors: [] } : parseScript( scriptMd );
 	const copy = copyMd === null ? { post: null, lines: [], alternatives: [], errors: [] } : parseCopy( copyMd );
 	errors.push( ...script.errors, ...copy.errors );
 
@@ -45,7 +46,10 @@ export function loadPackage( demo ) {
 		clips.set( name, { ...sidecar, mp4: demo.rawFile( `${ stem }.mp4` ), widePng: sidecar.wide ? demo.rawFile( sidecar.wide ) : null } );
 	}
 	const b = brand();
-	const timed = plan( script.scenes, clips, b );
+	// The plan is timed to the voice once every scene's voice matches the approved words; until then it is silent.
+	const voice = currentVoice( demo, script );
+	const voiced = voice.chunks.length > 0 && ! voice.problems.length;
+	const timed = plan( script.scenes, clips, b, voiced ? new Map( [ ...voice.map ].map( ( [ n, v ] ) => [ n, v.seconds ] ) ) : new Map() );
 	errors.push( ...timed.errors );
-	return { brand: b, scriptMd, scriptSha: scriptMd === null ? null : sha( scriptMd ), script, copy, clips, plan: timed, errors };
+	return { brand: b, scriptMd, scriptSha: scriptMd === null ? null : sha( scriptMd ), script, copy, clips, voice, voiced, plan: timed, errors };
 }

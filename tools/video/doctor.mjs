@@ -18,6 +18,8 @@ import { locate, run, ffmpeg, probe, x264 } from './lib/ffmpeg.mjs';
 import { storeUrl, storefrontPassword } from './lib/env.mjs';
 import { enterPassword } from './lib/storefront.mjs';
 import { FONT } from './lib/layout.mjs';
+import { AUDIO_DIR, library, libraryFile } from './lib/audio.mjs';
+import { keySource, keyHelp } from './lib/elevenlabs.mjs';
 
 const require = createRequire( import.meta.url );
 let failed = 0;
@@ -169,6 +171,36 @@ if ( locate( 'ffmpeg' ) && locate( 'ffprobe' ) ) {
 			fs.rmSync( out, { force: true } );
 		}
 	} );
+}
+
+if ( locate( 'ffmpeg' ) ) {
+	await check( 'ffmpeg audio filters (voice chain, mix, loudness)', async () => {
+		const { stdout } = await run( locate( 'ffmpeg' ), [ '-hide_banner', '-filters' ] );
+		const have = stdout.toString();
+		const needed = [ 'agate', 'acompressor', 'alimiter', 'loudnorm', 'ebur128', 'sidechaincompress', 'amix', 'adelay', 'afade', 'asplit', 'atrim', 'apad', 'pan', 'concat' ];
+		const missing = needed.filter( ( f ) => ! new RegExp( `\\s${ f }\\s` ).test( have ) );
+		if ( missing.length ) {
+			throw new Error( `this ffmpeg has no ${ missing.join( ', ' ) } — install a full build (README)` );
+		}
+		return `${ needed.length } filters present`;
+	} );
+}
+
+await check( 'Audio library (music bed, clicks, typing)', async () => {
+	const files = [ library.assets.music.file, ...library.assets.clicks.map( ( c ) => c.file ), library.assets.typing.file ];
+	const missing = files.filter( ( f ) => ! fs.existsSync( libraryFile( f ) ) );
+	if ( missing.length ) {
+		throw new Error( `missing in ${ path.relative( TOOL_DIR, AUDIO_DIR ) }/: ${ missing.join( ', ' ) } — git checkout tools/video/audio` );
+	}
+	return `${ files.length } files in tools/video/audio/`;
+} );
+
+// The voice needs the key; capture, render and check do not. Its value is never read here.
+{
+	const source = keySource();
+	line( source ? 'ok' : 'warn', source
+		? `ElevenLabs key — found in the ${ source } (not shown); the voice can be made on this machine`
+		: `ElevenLabs key — not on this machine; needed for voice.mjs only. ${ keyHelp() }` );
 }
 
 let store = null;

@@ -59,8 +59,22 @@ export const PACE = {
 	maxOnScreenWords: 180,
 };
 
+/**
+ * The voice (§10), seconds: where it starts in its scene and the breath after it. At most
+ * maxWords spoken across the whole video, so it never rushes the reader.
+ */
+export const VOICE = {
+	lead: 0.3,
+	tail: 0.5,
+	maxWords: 160,
+};
+
 /** Spec limits (§6, §8). */
 export const SPEC = {
 	maxBytes: 200 * 1024 * 1024,
 	maxCoverBytes: 2 * 1024 * 1024,
+	lufs: -14,
+	lufsTolerance: 0.5,
+	truePeak: -1,
+	sampleRate: 48000,
 };

@@ -3,9 +3,9 @@
  * into timed shots. The render and the self-check both use this, so what was approved is what is
  * rendered and what is checked.
  *
- * script.md is the guideline's one table — # | Sec | On screen | Line in the bottom band | Source
- * (an extra Spoken column is ignored). The "On screen" cell lists shots, each after the first
- * introduced by "Then" and its keyword (Then Clip …, Then Slide: …):
+ * script.md is the guideline's one table — # | Sec | On screen | Line in the bottom band | Spoken | Source.
+ * Spoken is what the voice says over the scene (§10); a scene may leave it empty. The "On screen"
+ * cell lists shots, each after the first introduced by "Then" and its keyword (Then Clip …, Then Slide: …):
  *
  *   Clip <name> (wide first, from 2 s, to 7 s, ×2) — optional description, never shown
  *   Slide: *row* *row*            each italic run is one row, revealed one at a time; one row = statement
@@ -13,9 +13,11 @@
  *   End card
  *
  * Under the table, optionally:  Cover: <clip name> at <seconds> s
+ * and a "## Pronunciation" table — | Term | Say as | — for a name the voice gets wrong: the voice is
+ * sent "Say as", the word check still listens for the term.
  */
 
-import { FPS, PACE } from './layout.mjs';
+import { FPS, PACE, VOICE } from './layout.mjs';
 
 export const SOURCES = {
 	brief: 'brief.md',
@@ -194,17 +196,17 @@ export function parseScript( md ) {
 	const errors = [];
 	const table = tables( md ).find( ( t ) => t.header.some( ( h ) => /on screen/i.test( h ) ) );
 	if ( ! table ) {
-		return { scenes: [], cover: null, errors: [ 'post/script.md has no table with an "On screen" column.' ] };
+		return { scenes: [], cover: null, pronunciation: [], spokenColumn: false, errors: [ 'post/script.md has no table with an "On screen" column.' ] };
 	}
 	const col = ( re ) => table.header.findIndex( ( h ) => re.test( h.trim() ) );
-	const c = { n: col( /^(#|scene|no\.?)$/i ), sec: col( /^sec/i ), screen: col( /on screen/i ), line: col( /^line/i ), source: col( /^source/i ) };
+	const c = { n: col( /^(#|scene|no\.?)$/i ), sec: col( /^sec/i ), screen: col( /on screen/i ), line: col( /^line/i ), spoken: col( /^spoken/i ), source: col( /^source/i ) };
 	for ( const [ key, label ] of [ [ 'n', '#' ], [ 'screen', 'On screen' ], [ 'line', 'Line in the bottom band' ], [ 'source', 'Source' ] ] ) {
 		if ( c[ key ] < 0 ) {
 			errors.push( `post/script.md: the table needs a "${ label }" column.` );
 		}
 	}
 	if ( errors.length ) {
-		return { scenes: [], cover: null, errors };
+		return { scenes: [], cover: null, pronunciation: [], spokenColumn: false, errors };
 	}
 	const scenes = [];
 	for ( const row of table.rows ) {
@@ -217,8 +219,17 @@ export function parseScript( md ) {
 			sec: c.sec >= 0 ? plain( row[ c.sec ] ) : '',
 			onScreen: row[ c.screen ] || '',
 			line: plain( row[ c.line ] ),
+			// "—" or "-" marks a scene with nothing spoken.
+			spoken: c.spoken >= 0 ? plain( row[ c.spoken ] ).replace( /^[—–-]$/, '' ) : '',
 			sources: parseSources( row[ c.source ] || '', errors, n ),
 		};
+		if ( /!/.test( scene.spoken ) ) {
+			errors.push( `Scene ${ n }: no exclamation marks in Spoken — the voice reads them as shouting (§10).` );
+		}
+		if ( /\b\d{1,2}:\d{2}\b/.test( scene.spoken ) ) {
+			// Tested 7 Oct: the clone read 15:00 as "fifteen hundred" and 10:00 as "ten o'clock".
+			errors.push( `Scene ${ n }: say a time in words in Spoken ("Wednesday morning", "that afternoon") — the screen shows the exact time from log.md (§10).` );
+		}
 		if ( ! scene.line ) {
 			errors.push( `Scene ${ n }: no line for the bottom band.` );
 		}
@@ -230,7 +241,11 @@ export function parseScript( md ) {
 	}
 	const cm = /^\s*Cover:\s*(?:clip\s+)?`?([a-z0-9]+(?:-[a-z0-9]+)*)`?\s+at\s+(\d+(?:\.\d+)?)\s*s\b/im.exec( md );
 	const cover = cm ? { name: cm[ 1 ].toLowerCase(), at: Number( cm[ 2 ] ) } : null;
-	return { scenes, cover, errors };
+	const say = tables( md ).find( ( t ) => t.header.some( ( h ) => /^term$/i.test( h.trim() ) ) && t.header.some( ( h ) => /^say as$/i.test( h.trim() ) ) );
+	const pronunciation = say
+		? say.rows.map( ( r ) => ( { term: plain( r[ say.header.findIndex( ( h ) => /^term$/i.test( h.trim() ) ) ] ), say: plain( r[ say.header.findIndex( ( h ) => /^say as$/i.test( h.trim() ) ) ] ) } ) ).filter( ( p ) => p.term && p.say )
+		: [];
+	return { scenes, cover, pronunciation, spokenColumn: c.spoken >= 0, errors };
 }
 
 /**
@@ -279,15 +294,16 @@ export function onScreenText( scene, brand ) {
 /**
  * Time every shot. Durations are computed, never typed: a slide step stays up one second per three
  * words and never under 2.5 s; a clip runs its real length (halved for ×2); the end card 3.5 s.
- * A scene too short to read its line and rows in is lengthened on its first slide step, or holds
- * its last clip frame.
+ * A scene too short to read its line and rows in — or to fit its voice, with a short lead-in and
+ * tail — is lengthened across its slide steps, or holds its last clip frame.
  *
  * @param {object[]} scenes Parsed scenes.
  * @param {Map}      clips  name → { seconds, wide, speed (sidecar) }.
  * @param {object}   brand  brand.json.
+ * @param {Map}      voice  scene number → seconds of its processed voice (none: a silent plan).
  * @return {{steps: object[], total: number, scenes: object[], errors: string[], notes: string[]}} Plan.
  */
-export function plan( scenes, clips, brand ) {
+export function plan( scenes, clips, brand, voice = new Map() ) {
 	const steps = [];
 	const errors = [];
 	const notes = [];
@@ -329,26 +345,33 @@ export function plan( scenes, clips, brand ) {
 			}
 		}
 		const read = onScreenText( scene, brand ).reduce( ( sum, t ) => sum + words( t ), 0 ) / PACE.wordsPerSecond;
+		const spoken = voice.get( scene.n ) || 0;
+		const listen = spoken ? VOICE.lead + spoken + VOICE.tail : 0;
+		const need = Math.max( read, listen );
 		const have = own.reduce( ( sum, s ) => sum + s.frames, 0 ) / FPS;
-		if ( own.length && have < read ) {
-			const extra = frames( read - have );
-			const slide = own.find( ( s ) => s.kind === 'slide' );
+		if ( own.length && have < need ) {
+			const extra = frames( need - have );
+			const why = listen > read ? 'the voice can finish' : 'the line can be read';
+			const slides = own.filter( ( s ) => s.kind === 'slide' );
 			const last = [ ...own ].reverse().find( ( s ) => s.kind === 'clip' );
-			if ( slide ) {
-				slide.frames += extra;
+			if ( slides.length ) {
+				// Spread over the rows, so no one row sits much longer than the others.
+				slides.forEach( ( s, i ) => {
+					s.frames += Math.floor( extra / slides.length ) + ( i < extra % slides.length ? 1 : 0 );
+				} );
 			} else if ( last ) {
 				last.hold = extra;
 				last.frames += extra;
-				notes.push( `Scene ${ scene.n }: holds the last frame of "${ last.clip }" ${ ( extra / FPS ).toFixed( 1 ) } s so the line can be read.` );
+				notes.push( `Scene ${ scene.n }: holds the last frame of "${ last.clip }" ${ ( extra / FPS ).toFixed( 1 ) } s so ${ why }.` );
 			} else {
 				own[ own.length - 1 ].frames += extra;
 			}
 		}
 		const seconds = own.reduce( ( sum, s ) => sum + s.frames, 0 ) / FPS;
 		if ( seconds > PACE.maxScene ) {
-			errors.push( `Scene ${ scene.n } runs ${ seconds.toFixed( 1 ) } s; no scene runs past ${ PACE.maxScene } s (§6) — cut detail or trim a clip.` );
+			errors.push( `Scene ${ scene.n } runs ${ seconds.toFixed( 1 ) } s; no scene runs past ${ PACE.maxScene } s (§6) — cut detail${ spoken ? ', shorten its Spoken words' : '' } or trim a clip.` );
 		}
-		timing.push( { n: scene.n, guide: scene.sec, seconds } );
+		timing.push( { n: scene.n, guide: scene.sec, seconds, voice: spoken || null } );
 		steps.push( ...own );
 	}
 	let start = 0;

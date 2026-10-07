@@ -5,8 +5,13 @@
  *   node tools/video/render.mjs <id>
  *
  * Refuses unless post/check.md carries a committed "Approved 1" line and script.md / copy.md are
- * unchanged since. Writes media/final/: <id>-linkedin.mp4 · -cover.png · -contact-N.png ·
+ * unchanged since — and, when the script has Spoken words, unless voice.mjs has made the voice from
+ * those approved words. Writes media/final/: <id>-linkedin.mp4 · -cover.png · -contact-N.png ·
  * -timeline.png · -copy.txt; a manifest and the drawn frames in media/render/. Then runs the check.
+ *
+ * Sound (§6, §10): the voice, each scene's at its start; one music bed ducked under it; a soft click
+ * on every click the capture logged and quiet typing under every typed stretch, moved with the clip's
+ * trim and speed; the whole mix at −14 LUFS. A script with no Spoken words renders silent.
  */
 
 import fs from 'node:fs';
@@ -17,8 +22,9 @@ import { loadPackage } from './lib/package.mjs';
 import { approval } from './lib/approvals.mjs';
 import { openFrames, pngSize, fileUrl } from './lib/slides.mjs';
 import { ffmpeg, FROM_YUV, TO_YUV, x264 } from './lib/ffmpeg.mjs';
-import { CANVAS, FPS, MIDDLE, PALETTE } from './lib/layout.mjs';
+import { CANVAS, FPS, MIDDLE, PALETTE, VOICE } from './lib/layout.mjs';
 import { runCheck } from './lib/checks.mjs';
+import { mixSoundtrack } from './lib/audio.mjs';
 
 const MARKS = { before: 'Before', after: 'After' };
 const SHEET = { columns: 4, rows: 4, tile: 432 };
@@ -41,6 +47,40 @@ function marks( phase, rect, speed = 1 ) {
 	return out;
 }
 
+/**
+ * Where the sound goes: each scene's voice, and every click and typed stretch the capture logged in
+ * the clips that are shown, mapped through each shot's trim and speed onto the video's timeline.
+ */
+function soundCues( pkg ) {
+	const { steps } = pkg.plan;
+	const voice = [];
+	const clicks = [];
+	const typing = [];
+	for ( const [ n, v ] of pkg.voice.map ) {
+		const first = steps.find( ( s ) => s.scene === n );
+		if ( first ) {
+			voice.push( { scene: n, file: v.file, take: v.take, at: first.start / FPS + VOICE.lead, seconds: v.seconds } );
+		}
+	}
+	for ( const step of steps.filter( ( s ) => s.kind === 'clip' ) ) {
+		const events = pkg.clips.get( step.clip )?.events || [];
+		const start = step.start / FPS;
+		const map = ( t ) => start + ( t - step.from ) / step.speed;
+		for ( const e of events ) {
+			if ( e.t < step.from || e.t > step.to ) {
+				continue;
+			}
+			if ( e.do === 'click' ) {
+				clicks.push( map( e.t ) );
+			} else if ( e.do === 'type' ) {
+				const end = Math.min( e.end ?? e.t, step.to );
+				typing.push( { at: map( e.t ), len: ( end - e.t ) / step.speed } );
+			}
+		}
+	}
+	return { voice, clicks, typing };
+}
+
 function fitStill( file ) {
 	const size = pngSize( fs.readFileSync( file ) );
 	const s = Math.min( 1, MIDDLE.width / size.width, MIDDLE.height / size.height );
@@ -59,8 +99,11 @@ async function main() {
 	if ( ! gate.ok ) {
 		throw new Error( `Not rendered — ${ gate.reason }` );
 	}
+	if ( pkg.voice.chunks.length && ! pkg.voiced ) {
+		throw new Error( `Not rendered — the voice does not match the approved script yet (node tools/video/voice.mjs ${ demo.id }):\n- ${ pkg.voice.problems.join( '\n- ' ) }` );
+	}
 	const { steps, total } = pkg.plan;
-	console.log( `Render ${ demo.id } · script ${ pkg.scriptSha } (approved in ${ gate.commit }) · ${ steps.length } shots · ${ total.toFixed( 1 ) } s` );
+	console.log( `Render ${ demo.id } · script ${ pkg.scriptSha } (approved in ${ gate.commit }) · ${ steps.length } shots · ${ total.toFixed( 1 ) } s · ${ pkg.voiced ? `voice in ${ pkg.voice.map.size } scene(s)` : 'silent' }` );
 	for ( const note of pkg.plan.notes ) {
 		console.log( `  note: ${ note }` );
 	}
@@ -159,12 +202,36 @@ async function main() {
 		}
 		process.stdout.write( '\n' );
 		fs.writeFileSync( path.join( demo.work, 'segments.txt' ), steps.map( ( s ) => `file '${ s.segment }'` ).join( '\n' ) + '\n' );
-		await ffmpeg( [
-			'-f', 'concat', '-safe', '0', '-i', 'segments.txt',
-			'-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000',
-			'-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k', '-shortest', '-movflags', '+faststart', out.mp4,
-		], { cwd: demo.work } );
+		await ffmpeg( [ '-f', 'concat', '-safe', '0', '-i', 'segments.txt', '-map', '0:v', '-c:v', 'copy', 'picture.mp4' ], { cwd: demo.work } );
 		steps.forEach( ( s ) => fs.rmSync( path.join( demo.work, s.segment ), { force: true } ) );
+
+		// The sound, then one mux: the picture is copied untouched. Written beside, then moved in, so a
+		// failed render never leaves a half-written video in media/final/.
+		let sound = { voiced: false };
+		const audioIn = [];
+		if ( pkg.voiced ) {
+			const cues = soundCues( pkg );
+			const mixed = await mixSoundtrack( { total, voice: cues.voice, clicks: cues.clicks, typing: cues.typing, out: path.join( demo.work, 'soundtrack.wav' ), workDir: demo.work } );
+			sound = {
+				voiced: true,
+				lufs: mixed.I,
+				truePeak: mixed.TP,
+				voice: cues.voice.map( ( v ) => ( { scene: v.scene, take: v.take, at: Number( v.at.toFixed( 3 ) ), seconds: v.seconds } ) ),
+				clicks: mixed.clicks,
+				typing: mixed.typing,
+			};
+			audioIn.push( '-i', 'soundtrack.wav' );
+			console.log( `  sound: voice in ${ cues.voice.length } scene(s), music bed, ${ mixed.clicks } click(s), ${ mixed.typing } typed stretch(es) · ${ mixed.I } LUFS, true peak ${ mixed.TP } dBTP` );
+		} else {
+			audioIn.push( '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000' );
+		}
+		await ffmpeg( [
+			'-i', 'picture.mp4', ...audioIn,
+			'-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-ac', '2',
+			'-t', total.toFixed( 3 ), '-movflags', '+faststart', 'linkedin.mp4',
+		], { cwd: demo.work } );
+		fs.renameSync( path.join( demo.work, 'linkedin.mp4' ), out.mp4 );
+		fs.rmSync( path.join( demo.work, 'picture.mp4' ), { force: true } );
 
 		// 4. The timeline scene as a still (the alternative Thursday post), and the copy as plain text.
 		const timelineSteps = steps.filter( ( s ) => s.layout === 'timeline' );
@@ -213,6 +280,7 @@ async function main() {
 			},
 			labelRef: path.basename( steps[ 0 ].png ),
 			cover,
+			sound,
 			steps: steps.map( ( s ) => ( {
 				scene: s.scene,
 				kind: s.kind,

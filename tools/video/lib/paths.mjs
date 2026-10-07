@@ -41,6 +41,7 @@ export function resolveDemo( arg ) {
 		post: path.join( dir, 'post' ),
 		media,
 		raw: path.join( media, 'raw' ),
+		voice: path.join( media, 'voice' ),
 		final: path.join( media, 'final' ),
 		work: path.join( media, 'render' ),
 		file: ( name ) => path.join( dir, name ),

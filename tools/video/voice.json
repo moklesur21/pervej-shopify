@@ -1,0 +1,24 @@
+{
+	"note": "Locked voice choices for voice.mjs (video guideline §10): Yeasir's own ElevenLabs voice clone, the same clone and settings the ch repo uses. No secrets here: the API key comes from ELEVENLABS_API_KEY (Windows: a user environment variable) or the macOS Keychain (service 'elevenlabs-api'). Change a setting only to fix a problem, never in the middle of a video. takes: one per scene; retries: extra takes only when a take fails the word check (a word missing, added or changed, or a clipped ending), never for taste. 'processing' is one loudness chain over the whole voice: pre, then a gain trimmed until the voice measures target_lufs, then post.",
+	"voice_id": "WtNDtptM8xXyadpKyK8M",
+	"voice_name": "Yeasir Voice Quick",
+	"tts_model_id": "eleven_v4",
+	"stt_model_id": "scribe_v2",
+	"output_format": "mp3_44100_128",
+	"voice_settings": {
+		"stability": 0.5,
+		"similarity_boost": 0.75
+	},
+	"tag": "[thoughtful]",
+	"takes": 1,
+	"retries": 2,
+	"min_accuracy": 0.98,
+	"keyterms": [ "WooCommerce", "WordPress", "Shopify", "Elementor", "Lighthouse", "ACF", "checkout", "Gutenberg" ],
+	"processing": {
+		"pre": "agate=threshold=0.005:ratio=3:range=0.1:attack=5:release=150,acompressor=threshold=-26dB:ratio=2.5:attack=8:release=150:knee=6",
+		"gain_db": 20,
+		"post": "alimiter=limit=0.79:attack=3:release=60:level=false",
+		"target_lufs": -14,
+		"tolerance_lu": 0.3
+	}
+}
