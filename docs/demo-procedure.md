@@ -1,6 +1,6 @@
 # Demo procedure — one demo, from the brief to the finished video
 
-The checklist for running one practice build from the brief file to the published LinkedIn video. Rules live in `CLAUDE.md` and `docs/house-rules.md`; the why is in `asset/pervej-demo-project-plan-v1.md`, `asset/pervej-demo-cycle-runbook-v1.md` and, for the video and its post copy, `asset/pervej-demo-video-guideline-v1.1.md`. This file only says **who does what, in what order, with which command or ask.**
+The checklist for running one practice build from the brief file to the published LinkedIn video. Rules live in `CLAUDE.md` and `docs/house-rules.md`; the why is in `asset/pervej-demo-project-plan-v1.md`, `asset/pervej-demo-cycle-runbook-v1.md` and, for the video and its post copy, `asset/pervej-demo-video-guideline-v1.2.md`. This file only says **who does what, in what order, with which command or ask.**
 
 Example ID throughout: `s01-cart-drawer-lag`. Replace it with yours — the ID is the name of the brief file waiting in `demos/_briefs/`.
 
@@ -10,9 +10,11 @@ Example ID throughout: `s01-cart-drawer-lag`. Replace it with yours — the ID i
 
 **Times.** Never type a time from memory. When an event happens, tell Claude Code to log it now — it reads the system clock and writes `log.md`. A missed time comes from a commit or a file's own timestamp, or stays blank. It is never estimated.
 
-**Nothing is recorded by hand.** Playwright scripts in `capture/` record the before and after themes through their preview links; the brief, questions, plan, timeline, QA sheet and handoff become slides drawn from the files. No OBS, no screen recorder, nothing of the tooling in frame — and Shopify's password page and preview bar never in frame either.
+**Nothing is recorded by hand.** Playwright scripts in `capture/` record the before and after themes through their preview links; the brief, questions, plan, timeline, QA sheet and handoff become slides drawn from the files; the voice is made by the toolkit from the approved words, in Yeasir's own voice clone (guideline §10). No OBS, no screen recorder, no microphone, nothing of the tooling in frame — and Shopify's password page, preview bar and admin never in frame either.
 
 **Stores.** Every store command runs against **your own** demo dev store (`SHOPIFY_STORE` in `tools/shopify/.env.local`). Nothing here ever touches a live theme or publishes one.
+
+**Everything local, the Shopify way** (guideline §2, demo plan v1.2 §6.2). Shopify has no local store: a demo is built on your own dev store (`theme dev`) and captured and checked there, on its unpublished before and after themes — never through `theme dev`'s local preview. Nothing else: no tunnel, proxy, public URL, mail server or extra software; the toolkit's Chromium and Claude's built-in browser only. The order emails are read in the order's timeline in the admin; phone widths are emulated; Chrome only. The same steps work on macOS and on Windows (`docs/windows.md`, Asad's PC).
 
 ---
 
@@ -32,7 +34,7 @@ Expected: `brief.md handoff.md log.md qa.md spec.md` and the queued briefs.
 
 2. **Stores** (demo plan §6.2). In the Partner organisation — never a personal login — create two development stores for the weekly demos, **demo store A** (Yeasir) and **demo store B** (Asad), and add Asad as a staff member of the organisation; check his access after creation. On each demo store: start with test data, activate the **Bogus gateway** (Settings → Payments), note the storefront password (Online Store → Preferences), switch the cart type to drawer (theme settings). Each person also creates their own `<name>-training` store for the T-series; labs never run on a demo store.
 
-3. **Tools on each machine** — Node 22.19+, ffmpeg, the current Shopify CLI (4.x: `theme push --strict` must exist), and Playwright's browsers through the video toolkit's one command:
+3. **Tools on each machine** — Node 22.19+, ffmpeg, the current Shopify CLI (4.x: `theme push --strict` must exist), and Playwright's browsers through the video toolkit's one command (Windows: `docs/windows.md`):
 
 ```bash
 brew install node ffmpeg
@@ -54,7 +56,7 @@ Fill in `SHOPIFY_STORE` and `SHOPIFY_STOREFRONT_PASSWORD`, then:
 tools/shopify/theme.sh doctor
 ```
 
-Every line `[ok]`. In Claude Code, approve the `shopify-dev-mcp` server from `.mcp.json` (current Shopify docs for every session) and run the T0.3 litmus test once: *"Is `checkout.liquid` still the way to customize checkout?"* — the answer must say it is retired.
+Every line `[ok]`. Then the voice key, once per machine that makes the voice: the person types it, Claude Code never sees it (toolkit README, "The voice key"; one key per machine serves both repos). In Claude Code, approve the `shopify-dev-mcp` server from `.mcp.json` (current Shopify docs for every session) and run the T0.3 litmus test once: *"Is `checkout.liquid` still the way to customize checkout?"* — the answer must say it is retired.
 
 4. **Check the video toolkit against your store.** `tools/video/` was adapted to Shopify on `chore/shopify-capture`: it gets past the storefront password page the way Shopify's own Lighthouse CI does, records on the demo's preview themes, hides the preview bar, and fails with a clear message when a page shows the wrong theme. With step 3 done:
 
@@ -62,9 +64,9 @@ Every line `[ok]`. In Claude Code, approve the `shopify-dev-mcp` server from `.m
 npm --prefix tools/video run doctor
 ```
 
-The storefront-password line must say *accepted*. Then one real capture, asked of Claude Code on a throwaway branch:
+The storefront-password line must say *accepted*; the ElevenLabs line says `[ok]` once the key is stored (step 3). Then one real capture, asked of Claude Code on a throwaway branch:
 
-> Check the capture toolkit on my demo store: `tools/shopify/theme.sh new s00-capture-check` and `push s00-capture-check before`, a throwaway `demos/s00-capture-check/capture/shoot.mjs` with one clip on the home page and one Lighthouse run, then `capture.mjs s00-capture-check before`. Show me a frame from the clip and the wide still: no password page, no preview bar, the sidecar on the pushed theme. Then clean the theme off the store and delete the throwaway folders; commit nothing.
+> Check the capture toolkit on my demo store: `tools/shopify/theme.sh new s00-capture-check` and `push s00-capture-check before`, a throwaway `demos/s00-capture-check/capture/shoot.mjs` with one clip on the home page that clicks once, one still at 390 px and one Lighthouse run, then `capture.mjs s00-capture-check before`. Show me a frame from the clip, the wide still and the 390 px still: no password page, no preview bar, the sidecar on the pushed theme with the click in its events. Then clean the theme off the store and delete the throwaway folders; commit nothing.
 
 Anything the real store does differently from the mock in `tools/video/test/` is fixed in the toolkit, on a `chore/` branch, before the first demo.
 
@@ -222,13 +224,15 @@ tools/shopify/theme.sh push s01-cart-drawer-lag after
 
 New session:
 
-> Re-run `demos/s01-cart-drawer-lag/capture/` on the after theme for the after clips — same view, same framing, same steps — and record the QA run per the video guideline §4: the test order on desktop, the scoped items at 360, 390 and 768 px, and the after-Lighthouse.
+> Re-run `demos/s01-cart-drawer-lag/capture/` on the after theme for the after clips — same view, same framing, same steps — and record the QA run per the video guideline §4: the test order on desktop with an `@example.com` email, the scoped items at 360, 390 and 768 px (emulated), and the after-Lighthouse.
 
 Check `media/raw/s01-cart-drawer-lag-after-*` and `-qa-*`. If a run fails, fix the theme or the script — never the footage.
 
-**4b. QA sheet.** `qa.md`: all 18 rows, with evidence (a clip or screenshot filename in `media/raw/`, or pasted output). Includes the full purchase flow with a Bogus-gateway test order (card `1`) found in admin, the theme editor pass and the scope diff (`tools/shopify/theme.sh diff s01-cart-drawer-lag --stat`). A known defect is not a pass. Then: *"Log `QA passed` now."*
+The order emails live in the order's timeline in the admin, where no script signs in. Sign in to your store's admin yourself in Claude's built-in browser (Claude Code never types a password), then ask *"Read the timeline of the test order into `qa.md` row 2."* — or take a still of it by hand into `media/raw/s01-cart-drawer-lag-qa-order-timeline.png`. It lists the customer notifications Shopify sent (which email, to whom), not their text. Evidence only: the admin never goes in the video.
 
-**4c. Handoff.** `handoff.md`: what changed · the after theme's preview link · walkthrough link · how to use it · rollback · what I'd flag to the client · warranty line. Record the 2-minute walkthrough the agency would receive (screen and voice; nothing of the tooling in frame). Then: *"Log `Handoff sent` now."* **The clock stops.**
+**4b. QA sheet.** `qa.md`: all 17 rows, with evidence (a clip or screenshot filename in `media/raw/`, or pasted output). Includes the full purchase flow with a Bogus-gateway test order (card `1`) found in admin with its timeline, the theme editor pass and the scope diff (`tools/shopify/theme.sh diff s01-cart-drawer-lag --stat`). Every check is named as what it was ("360 / 390 / 768 px, emulated", "Chrome"); nothing claims a real device or a browser that was not run. A known defect is not a pass. Then: *"Log `QA passed` now."*
+
+**4c. Handoff.** `handoff.md`: what changed · staging link ("Practice build on a Shopify development store; not publicly available." — no link: the store sits behind its password) · how to use it · rollback · what I'd flag to the client · warranty line. No walkthrough video (retired in guideline v1.2): the demo's one video is Stage 5's. Then: *"Log `Handoff sent` now."* **The clock stops.**
 
 **4d. Pull request.** Cold read as a stranger:
 
@@ -252,33 +256,31 @@ Open the PR. The other person reviews every line — from the commit after the b
 
 > Make the video package for `s01-cart-drawer-lag` per the video guideline. Stop at Approval 1.
 
-Claude Code writes `post/script.md` (seven scenes; every time, number and quote copied from a file in the folder, and the script names the file), `post/copy.md` (the post text plus two alternative first lines) and `post/check.md` (the self-check). A scene with no real material is dropped, never filled.
+Claude Code writes `post/script.md` (seven scenes with the Spoken column — what the voice says, guideline §5; every time, number and quote copied from a file in the folder, and the script names the file), `post/copy.md` (the post text plus two alternative first lines) and `post/check.md` (the self-check). A scene with no real material is dropped, never filled.
 
-**Approval 1 — Yeasir.** Read `script.md` and `copy.md`. Pick the first line. Edit or approve. Write `Approved 1 — <Day HH:MM> · Yeasir` under an "Approvals" heading in `check.md`. Then:
+**Approval 1 — Yeasir.** Read `script.md` — the lines, the slides and the Spoken words — and `copy.md`. Pick the first line. Edit or approve. Write `Approved 1 — <Day HH:MM> · Yeasir` under an "Approvals" heading in `check.md`. Then:
 
 ```bash
 git add demos/s01-cart-drawer-lag/post && git commit -m "s01: script and copy"
 ```
 
-**5b. The cut.** Ask:
+**5b. The voice and the cut.** Ask:
 
-> Script and copy approved. Render, run the self-check, stop at Approval 2.
+> Script and copy approved. Make the voice, render, run the self-check, stop at Approval 2.
 
-Claude Code renders `media/final/`: `s01-cart-drawer-lag-linkedin.mp4`, `-cover.png`, `-contact-*.png`, `-timeline.png`, `-copy.txt`, and updates `check.md`.
+Claude Code runs `node tools/video/voice.mjs s01-cart-drawer-lag` (the approved Spoken words in Yeasir's voice clone, each scene checked word for word; on the machine that holds the voice key) and then `node tools/video/render.mjs s01-cart-drawer-lag`, which renders `media/final/`: `s01-cart-drawer-lag-linkedin.mp4` (voiced, with the music bed, clicks and typing), `-cover.png`, `-contact-*.png`, `-timeline.png`, `-copy.txt`, and updates `check.md`. It looks at every contact-sheet frame and records the look.
 
-**Approval 2 — Yeasir.** Watch the video once at phone size with the sound off (a window about 400 px wide). Scan the contact sheets — no password page, preview bar, admin, terminal or path in any frame. Every row of `check.md` passed — a fail is fixed or reported, never waved through. Write `Approved 2 — <Day HH:MM> · Yeasir` in `check.md`, then:
+**Approval 2 — Yeasir.** Watch the video once at phone size with the sound off (a window about 400 px wide), then once with the sound on. Scan the contact sheets — no password page, preview bar, admin, terminal or path in any frame. Every row of `check.md` passed — a fail is fixed or reported, never waved through. A note ("scene 3 sounds rushed", "music too loud") goes back to Claude Code in plain words; each kind has one fix (guideline §10) and a re-render of a few minutes. When it is right, write `Approved 2 — <Day HH:MM> · Yeasir` in `check.md`, then:
 
 ```bash
 git add demos/s01-cart-drawer-lag/post && git commit -m "s01: video package"
 ```
 
-Any later change to the words goes back to Approval 1 and a re-render.
+Any later change to the words goes back to Approval 1, the voice and a re-render.
 
-**5c. Voice-over (optional — for a video that will be pinned, featured or sponsored).** Ask *"Add the Spoken column for `s01-cart-drawer-lag`."* Approve it, record one take as `media/voice/s01-cart-drawer-lag-vo.m4a`, then ask *"The voice-over is in `media/voice/`. Fit it and stop at Approval 2."* Approval 2 again.
+**5c. To the drive.** Copy the whole `media/` folder to `recordings/shopify/s01-cart-drawer-lag/` on the drive; put the path in `log.md`; tell the VA the demo ID.
 
-**5d. To the drive.** Copy the whole `media/` folder to `recordings/shopify/s01-cart-drawer-lag/` on the drive; put the path in `log.md`; tell the VA the demo ID.
-
-**5e. Tuesday carousel** (still drafted in the project chat — guideline §13). Send `log.md`, `qa.md` and `handoff.md` to the chat; it returns the carousel. Approve it, save it as `post/carousel.md`:
+**5d. Tuesday carousel** (still drafted in the project chat — guideline §13). Send `log.md`, `qa.md` and `handoff.md` to the chat; it returns the carousel. Approve it, save it as `post/carousel.md`:
 
 ```bash
 git add demos/s01-cart-drawer-lag/post/carousel.md && git commit -m "s01: carousel" && git push
@@ -337,7 +339,7 @@ This is the only direct-to-`main` commit the workflow allows.
 - [ ] `qa.md` — every row passed with evidence
 - [ ] `handoff.md` — with rollback and "what I'd flag"
 - [ ] `capture/` committed; before, after and QA clips in `media/raw/`
-- [ ] `post/script.md` and `post/copy.md` approved; `post/check.md` every row passed, both approvals recorded
+- [ ] `post/script.md` and `post/copy.md` approved, the voice made from them; `post/check.md` every row passed, both approvals recorded
 - [ ] `media/final/` complete and on the drive; the VA has the ID
 - [ ] PR reviewed line by line, merged by Yeasir, tagged, branch deleted
 - [ ] The demo's themes cleaned off the store; any store data undone
@@ -357,5 +359,5 @@ This is the only direct-to-`main` commit the workflow allows.
 | First commit | First build commit |
 | Staging ready | Feature works end to end |
 | QA passed | `qa.md` complete |
-| Handoff sent | `handoff.md` + walkthrough done; the clock stops |
+| Handoff sent | `handoff.md` done; the clock stops |
 | Published | Post URL and date, the Thursday after; added on `main` by Yeasir |

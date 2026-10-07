@@ -6,13 +6,9 @@ In the shape an agency would receive. Their brand; no mention of us or of AI.
 
 - <files and settings, from `tools/shopify/theme.sh diff <id> --stat`; any metafield definitions or store settings changed, and when>
 
-## Preview link
+## Staging link
 
-<the after theme's preview link>
-
-## Walkthrough
-
-<video link, 2–3 min: scope recap → demo + one edge case → how the merchant edits it → before/after → what to know → warranty>
+Practice build on a Shopify development store; not publicly available.
 
 ## How to use it
 

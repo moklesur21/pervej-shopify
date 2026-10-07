@@ -1,6 +1,6 @@
 # demos/ — one folder per practice build
 
-The operating manual is `asset/pervej-demo-project-plan-v1.md` (rules, scoring, QA); the chat-to-repo handoff is `asset/pervej-demo-cycle-runbook-v1.md`; how the video and its post copy are made is `asset/pervej-demo-video-guideline-v1.1.md`, which takes precedence on that topic. This is the folder-level summary; the step-by-step is `docs/demo-procedure.md`.
+The operating manual is `asset/pervej-demo-project-plan-v1.md` (rules, scoring, QA); the chat-to-repo handoff is `asset/pervej-demo-cycle-runbook-v1.md`; how the video and its post copy are made is `asset/pervej-demo-video-guideline-v1.2.md`, which takes precedence on that topic. This is the folder-level summary; the step-by-step is `docs/demo-procedure.md`.
 
 ## The one rule
 
@@ -22,7 +22,7 @@ demos/s01-cart-drawer-lag/             ← paperwork (this folder)
   media/      git-ignored; copied to the drive as recordings/shopify/<id>/
     themes.json  the before/after theme IDs and preview links on *your* store (tools/shopify/theme.sh push)
     raw/      <id>-before-* · <id>-after-* · <id>-qa-* · Lighthouse reports
-    voice/    optional voice-over take
+    voice/    the voice: takes, takes.json, the processed WAVs
     final/    <id>-linkedin.mp4 · <id>-cover.png · <id>-contact-*.png · <id>-timeline.png · <id>-copy.txt
 shopify-dev/s01-cart-drawer-lag/  ← the deliverable: theme/ (and app/, middleware/, pixel/, data/ when the brief needs them)
 ```

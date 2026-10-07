@@ -14,7 +14,7 @@ Ask Yeasir when something here does not match what you see. Do not improvise aro
 - **Work happens on branches.** The default branch is `main`. Nobody commits to `main` directly; Yeasir merges pull requests into it.
 - **Training is separate.** The T-series handbook lives in `docs/handbook/`, but you do the tutorials in your own sandbox (section 7), not in this repo.
 
-Read after this guide, in order: `CLAUDE.md` (rules that are always on), `docs/workflow.md` (branches and collaboration), `docs/house-rules.md` (the full rulebook), `demos/README.md` (how a demo runs), `docs/demo-procedure.md` (one demo step by step), `asset/pervej-demo-cycle-runbook-v1.md` (what the project chat does and what this repo receives), `asset/pervej-demo-video-guideline-v1.1.md` (how the video and its post copy are made).
+Read after this guide, in order: `CLAUDE.md` (rules that are always on), `docs/workflow.md` (branches and collaboration), `docs/house-rules.md` (the full rulebook), `demos/README.md` (how a demo runs), `docs/demo-procedure.md` (one demo step by step), `asset/pervej-demo-cycle-runbook-v1.md` (what the project chat does and what this repo receives), `asset/pervej-demo-video-guideline-v1.2.md` (how the video and its post copy are made).
 
 ---
 
@@ -30,6 +30,7 @@ Read after this guide, in order: `CLAUDE.md` (rules that are always on), `docs/w
 | Shopify CLI (current, 4.x) | `npm install -g @shopify/cli@latest`. Check `shopify version`. Older versions lack `theme push --strict`, which our tooling relies on. |
 | ffmpeg | `brew install ffmpeg` — renders the demo video (video guideline §11). |
 | Playwright browsers | Installed by the one command in the video toolkit README (`tools/video/`). |
+| The voice key | Only on a machine that makes the video's voice: an ElevenLabs key from Yeasir, typed once into the Keychain (macOS) or a user environment variable (Windows) — never a file, never shown to Claude Code. The toolkit README, "The voice key", has the one command for each. |
 | Claude Code | Yeasir tells you which account to use. Install per T0.3 in `docs/handbook/`, then run `claude` from the repo root. |
 
 Open a new terminal and check: `node -v` shows 22.19+, `shopify version` prints 4.x, `ffmpeg -version` prints a version.
@@ -173,6 +174,8 @@ git push -u origin <demo-id>      # then open the PR
 ---
 
 ## 10. Windows
+
+Asad's machine is a Windows PC: `docs/windows.md` is its step-by-step setup — tools, the voice key, the toolkit, checking on the dev store — with a check after each step. In short:
 
 - Install Git for Windows (it brings Git Bash), Node LTS (`winget install --id OpenJS.NodeJS.LTS -e`), ffmpeg (`winget install --id Gyan.FFmpeg.Essentials -e`), then `npm install -g @shopify/cli@latest` in a new terminal.
 - Run `tools/shopify/theme.sh` from **Git Bash** (it is a bash script). The Shopify CLI itself works in PowerShell too.

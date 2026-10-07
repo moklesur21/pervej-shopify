@@ -28,7 +28,7 @@ Written in the project chat (runbook §3); it waits in `demos/_briefs/<id>.md` o
 
 - Deadline: <date> · Budget: up to <n> hours
 - Duplicate theme only, never the live one; no new paid apps; nothing outside the theme unless the brief says so
-- Deliverables: preview link · walkthrough video (2 min) · handover note · rollback note · one thing to flag to the client
+- Deliverables: staging (development store) · handover note · rollback note · one thing to flag to the client
 
 ## 2. Mini approach
 
@@ -47,7 +47,7 @@ The capture script (`capture/`) is written from this list and the video is cut f
 
 1. Before — the symptom, as steps: <page → action → what goes wrong>. Recorded on the before theme's preview, before anything is changed. Scene 1.
 2. After — the same steps on the after theme's preview, working, same framing. Scene 4.
-3. QA — the test order on desktop · the scoped items at 360, 390 and 768 px · after-Lighthouse. Scene 5.
+3. QA — the test order on desktop · the scoped items at 360, 390 and 768 px, emulated · after-Lighthouse. Scene 5.
 4. Slides, not recorded — the brief and any Q&A (scenes 2–3), the plan and delivery date from `spec.md` (scene 3), the timeline from `log.md` and the handoff from `handoff.md` (scene 6), what I'd flag (scene 7).
 
 ## Before you start
