@@ -1,6 +1,6 @@
 # Asad — start here
 
-Your checklist from a fresh Mac to ready for your first demo. Work top to bottom; each step says how to know it worked. This is the short version with your real values filled in. The full background is in [getting-started.md](getting-started.md) (your setup guide) and [demo-stores-setup.md](demo-stores-setup.md) (how the stores were made).
+Your checklist from your Windows PC to ready for your first demo. Work top to bottom; each step says how to know it worked. This is the short version with your real values filled in. Every command runs in **Git Bash** unless it says PowerShell. The full background is in [windows.md](windows.md) (the pipeline on Windows), [getting-started.md](getting-started.md) (your setup guide) and [demo-stores-setup.md](demo-stores-setup.md) (how the stores were made).
 
 If something on screen doesn't match, stop and send Yeasir the exact command and the exact output. Don't work around it.
 
@@ -17,16 +17,23 @@ Store A (`pervej-demo-a`) is Yeasir's. You never use it.
 - [ ] You can open https://github.com/moklesur21/pervej-shopify (a private repo). If not, ask Yeasir.
 - [ ] At https://dev.shopify.com/dashboard → **Stores**, you see `pervej-demo-b` and can open its admin.
 
-## 2. Tools on your Mac (15 min)
+## 2. Tools on your PC (15 min)
+
+Git, Node and ffmpeg are probably there already from `pervej-woo`: run the checks below first and install only what is missing (in PowerShell or Git Bash):
 
 ```bash
-brew install node ffmpeg
+winget install --id Git.Git -e
+winget install --id OpenJS.NodeJS.LTS -e
+winget install --id Gyan.FFmpeg.Essentials -e
+```
+
+Then, in a new Git Bash window, the Shopify CLI — from npm, the only way we install it:
+
+```bash
 npm install -g @shopify/cli@latest
 ```
 
-Install the Shopify CLI from npm, never Homebrew. If `brew list shopify-cli` finds an old copy, run `brew uninstall shopify-cli` first.
-
-Open a new terminal, then check:
+Open a new Git Bash window, then check:
 
 ```bash
 node -v              # 22.19 or newer
@@ -44,13 +51,15 @@ git config --global user.email "you@example.com"
 
 ## 3. Clone the repo
 
+Next to `pervej-woo` is a good place (for example `C:\xampp\htdocs`, which Git Bash calls `/c/xampp/htdocs`); there is no local Shopify, so the folder needs no web server:
+
 ```bash
-cd /Applications/MAMP/htdocs
+cd /c/xampp/htdocs
 git clone https://github.com/moklesur21/pervej-shopify.git
 cd pervej-shopify
 ```
 
-Run every command below from this folder.
+Run every command below from this folder, in Git Bash.
 
 ## 4. Your settings file (2 min)
 
@@ -104,6 +113,8 @@ npm --prefix tools/video run setup
 
 It installs the toolkit's packages and a Chromium (about 470 MB), then runs its doctor. The **Storefront password** line must say *accepted*.
 
+The **ElevenLabs** line: the video's voice is made with a key that belongs to the PC, not the repo. If you stored it for `pervej-woo`, the line already reads `[ok]`. If it reads `warn`, follow [windows.md](windows.md) §5 (Yeasir sends you the key first, §1), then quit and reopen the Claude app and Git Bash. Never paste the key into a Claude chat.
+
 ## 7. Claude Code
 
 - Install it as [T0.3](handbook/T0.3-claude-code-for-shopify.md) describes, with the account Yeasir gives you, then run `claude` from the repo root. It reads `CLAUDE.md` by itself.
@@ -114,14 +125,14 @@ It installs the toolkit's packages and a Chromium (about 470 MB), then runs its 
 ## 8. Training store and sandbox
 
 - Create your own training store: Dev Dashboard → **Stores** → **Create store** → **Dev**, name `asad-training`, plan **Basic**, tick **Generate test data for store**. T-series labs run only there, never on store B.
-- Keep the lab repos in a folder of your own outside this repo, for example `/Applications/MAMP/htdocs/shopify-training-asad/`.
+- Keep the lab repos in a folder of your own outside this repo, for example `C:\xampp\htdocs\shopify-training-asad\`.
 - Start at the [training catalog](handbook/0shopify-training-catalog.md), then T0.1. Fast track: M0 → M1 → T2.1–T2.3 → M3 → M7. Progress and drift notes: [training-index.md](training-index.md).
 
 ## Done: send Yeasir
 
 - [ ] The six `[ok]` lines from `theme.sh doctor` (paste them)
 - [ ] `theme.sh list` showing store B's themes
-- [ ] The video doctor's Storefront password line saying *accepted*
+- [ ] The video doctor's Storefront password line saying *accepted*, and its ElevenLabs line `[ok]`
 - [ ] The litmus test passed
 - [ ] `git status` clean: no `.env.local`, `shopify.theme.toml` or `.shopify/` listed
 
