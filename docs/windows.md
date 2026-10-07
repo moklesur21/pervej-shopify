@@ -103,7 +103,7 @@ tools/shopify/theme.sh clean <id>
 
 | `qa.md` row | How | Written as |
 |---|---|---|
-| 2 — the order emails | Place the test order with an `@example.com` email. Sign in to store B's admin in the built-in browser (§7), open the order, and ask Claude Code to read its **Timeline** into row 2 — or take a still with Win+Shift+S into `media/raw/<id>-qa-order-timeline.png`. The timeline lists the customer notifications Shopify sent (which email, to whom), not their text | "Order confirmation listed in the order's timeline (#…, to …@example.com)" |
+| 2 — the order emails | Place the test order with an `@example.com` email. Sign in to store B's admin in the built-in browser (§7), open the order, and ask Claude Code to read its **Timeline** and the email under **View email** (subject, delivery status, text) into row 2 — or take stills with Win+Shift+S into `media/raw/<id>-qa-order-timeline.png` and `-qa-order-email.png`. Never press Resend | "Order confirmation sent to …@example.com, in the order's timeline (#…): subject …, status …" |
 | 3 — phones | `cap.open( { view: 360 } )`, `390` and `768` in the QA capture: the toolkit opens every width under 768 px as a phone (touch, mobile user agent) | "Mobile 360 / 390 / 768 px, emulated" |
 | 4 — browsers | Chrome only | "Chrome" |
 | The handoff's staging link | — | "Practice build on a Shopify development store; not publicly available." |

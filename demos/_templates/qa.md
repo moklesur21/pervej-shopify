@@ -9,7 +9,7 @@ Theme: `<id> · after` (#<theme id>) on <store> · Tester: <name> · Date: <date
 | # | Item | Result | Evidence |
 |---|---|---|---|
 | 1 | Functional pass on the scoped items, including edge cases (list them; the Shopify set: empty metafield, sold-out variant, single-image product, 80-character title, no compare-at price, one-product collection, logged in and out) | | |
-| 2 | Full purchase flow with a test order: add to cart (product page, quick add / drawer) → cart (qty, remove, discount code) → checkout with an `@example.com` email → order placed with the test gateway (card `1`), order visible and correct in admin, the customer notifications its timeline lists (which email, to whom — read in the admin by a person) | | |
+| 2 | Full purchase flow with a test order: add to cart (product page, quick add / drawer) → cart (qty, remove, discount code) → checkout with an `@example.com` email → order placed with the test gateway (card `1`), order visible and correct in admin, its emails in the order's timeline (which email went to whom; View email: subject, delivery status, text — read in the admin by a person) | | |
 | 3 | Mobile 360 / 390 / 768 px, emulated (touch targets, sticky elements, drawer scroll-lock) | | |
 | 4 | Chrome | | |
 | 5 | `tools/shopify/theme.sh check <id>` — zero errors; warnings fixed or listed | | |
