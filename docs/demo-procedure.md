@@ -1,20 +1,16 @@
-# Demo procedure — one demo, from the brief to the finished video
+# Demo procedure — one demo, from the brief to three published posts
 
-The checklist for running one practice build from the brief file to the published LinkedIn video. Rules live in `CLAUDE.md` and `docs/house-rules.md`; the why is in `asset/pervej-demo-project-plan-v1.md`, `asset/pervej-demo-cycle-runbook-v1.md` and, for the video and its post copy, `asset/pervej-demo-video-guideline-v1.4.md`. This file only says **who does what, in what order, with which command or ask.**
+What the people do around one demo run. The run itself — every step Claude Code takes, in order — is `.claude/skills/demo/SKILL.md`; the rules are `CLAUDE.md` and `docs/house-rules.md`; the why is `asset/pervej-demo-video-guideline-v1.4.md` (the brief to the three posts, in one run) and `asset/pervej-demo-project-plan-v1.md`.
 
-Example ID throughout: `s01-cart-drawer-lag`. Replace it with yours — the ID is the name of the brief file waiting in `demos/_briefs/`.
+Example ID throughout: `s03-click-to-order-journey`. Replace it with yours — the ID is the name of the brief file waiting in `demos/_briefs/`.
 
-**Never paste into Claude Code:** the Upwork feed, links, full job posts, poster names, the client fact sheet. Claude Code stops if it sees any of them. It receives `brief.md` and nothing else.
+**Never paste into Claude Code:** the Upwork feed, links, full job posts, poster names, the client fact sheet. Claude Code stops if it sees any of them. It receives `brief.md` and nothing else. Private files live outside the repo (`~/pervej-private/`), never in the working tree.
 
-**Sessions.** One Claude Code session per stage, on the demo branch. The repo files carry all the state, so a fresh session at Stages 2, 3, 4 and 5 loses nothing and keeps each session small.
+**One run, one session.** The demo is one task: a new Claude Code session, one line, and the next thing you see is a finished, audited package — with one stop at QA for what only a person may do. Auto mode is fine for a demo run (it is the one exception to ask-first, house rules §0); the repo's `.claude/settings.json` already allows the run's own commands and denies git push, theme publish and theme delete.
 
-**Times.** Never type a time from memory. When an event happens, tell Claude Code to log it now — it reads the system clock and writes `log.md`. A missed time comes from a commit or a file's own timestamp, or stays blank. It is never estimated.
+**Stores.** Every store command runs against **your own** demo dev store (`SHOPIFY_STORE` in `tools/shopify/.env.local`). Nothing here ever touches a live theme or publishes one. The storefront password and the admin sign-in are typed by a person, never by Claude Code; the toolkit reads the storefront password from `.env.local` itself.
 
-**Nothing is recorded by hand.** Playwright scripts in `capture/` record the before and after themes through their preview links; the brief, questions, plan, timeline, QA sheet and handoff become slides drawn from the files; the voice is made by the toolkit from the approved words, in Yeasir's own voice clone (guideline §10). No OBS, no screen recorder, no microphone, nothing of the tooling in frame — and Shopify's password page, preview bar and admin never in frame either.
-
-**Stores.** Every store command runs against **your own** demo dev store (`SHOPIFY_STORE` in `tools/shopify/.env.local`). Nothing here ever touches a live theme or publishes one.
-
-**Everything local, the Shopify way** (guideline §2, demo plan v1.2 §6.2). Shopify has no local store: a demo is built on your own dev store (`theme dev`) and captured and checked there, on its unpublished before and after themes — never through `theme dev`'s local preview. Nothing else: no tunnel, proxy, public URL, mail server or extra software; the toolkit's Chromium and Claude's built-in browser only. Order emails are not checked — Shopify sends them, not the theme; phone widths are emulated; Chrome only. The same steps work on macOS and on Windows (`docs/windows.md`, Asad's PC).
+**Everything local, the Shopify way** (guideline §2, demo plan v1.2 §6.2). Shopify has no local store: a demo is built and checked on your own dev store, on its unpublished before and after themes. Nothing else: no tunnel, proxy, public URL, mail server or extra software; the toolkit's Chromium and Claude's built-in browser only. Order emails are not checked — Shopify sends them, not the theme; phone widths are emulated, Chrome only.
 
 ---
 
@@ -80,282 +76,130 @@ Then import it on both demo stores.
 
 ---
 
-## Stage 1 — start the demo · builder · off the clock
+## Stage 1 — start the run · Yeasir or Asad
 
-1. Branch:
+1. Once per machine, on top of Stage 0: `PERVEJ_DRIVE_DIR=<the recordings folder of your synced drive>` in `tools/shopify/.env.local`, so the run can copy the package there (without it the package stays in `demos/<id>/media/final/`). `npm --prefix tools/video run doctor` — every line `[ok]`, including PDF printing, the storefront password and the ElevenLabs key — and `tools/shopify/theme.sh doctor`, with the CLI logged in.
+
+2. `main` up to date, nothing uncommitted:
 
 ```bash
 git checkout main && git pull
 ```
 
-```bash
-git checkout -b s01-cart-drawer-lag
-```
+3. A new Claude Code session in the repo, and one line:
 
-2. Move the brief out of the inbox into the demo folder — moved, never copied, so there is only ever one brief — then add the other templates:
+> /demo s03-click-to-order-journey
 
-```bash
-mkdir -p demos/s01-cart-drawer-lag && git mv demos/_briefs/s01-cart-drawer-lag.md demos/s01-cart-drawer-lag/brief.md
-```
+("Work on s03-click-to-order-journey" means the same.) The run branches, commits the base theme, plants and pushes the before theme, records the before clips, starts the clock, plans, builds through the after theme, QAs, hands off, drafts and renders the three posts, has them audited, copies the package to the drive and ends with one short message.
 
-```bash
-cp demos/_templates/{spec,log,qa,handoff}.md demos/s01-cart-drawer-lag/
-```
+**It stops only when blocked** (guideline §3), with one question:
 
-The brief goes in exactly as the project chat issued it. From here on, reissues and Q&A answers land in `demos/s01-cart-drawer-lag/brief.md` on this branch, never in `demos/_briefs/`.
+| Stop | What you do |
+|---|---|
+| **QA — the person's steps** (every demo) | On the after theme's preview link: place the test order with an `@example.com` email, the test payment gateway, card `1`; in the admin, screenshot the order and do the theme-editor pass, saving the files under the names it gives; reply with the order number. |
+| An ambiguity in the brief that changes what gets built | Put the question to the project chat, paste the answer back. The run writes it into `brief.md` `## Q&A` with both times and carries on. |
+| Something it can't do itself — the CLI wants a login, a token, a missing asset, `main` behind `origin` | Do it, say "done". |
+| The audit still fails after two rounds of fixes | Read what's left in `post/audit.md`; decide. |
+| Marketplace material in the brief | The brief goes back to the project chat. |
 
-```bash
-git add demos/s01-cart-drawer-lag && git commit -m "s01: brief"
-```
-
-3. The base theme — untouched, committed before anything else. **Horizon for a new build** (the house decision, strategy v1.4: `theme.sh new <id>` with no base); **Dawn when the brief's client store is Dawn-based** — fix and feature work happens in the architecture the store already has. s01's store is Dawn-based:
-
-```bash
-tools/shopify/theme.sh new s01-cart-drawer-lag dawn
-```
-
-Run the `git commit` line it prints (`s01: baseline — Dawn v16.0.0 (<sha>), untouched`). Every later diff then shows only our work. A brief that asks for a new build on Dawn is a question for the project chat, not a silent switch.
+Everything else it decides and writes down: build decisions in `spec.md`, wording decisions in `post/check.md`, and the ones the client should confirm in `handoff.md`. No plan approval or delivery acceptance is waited for (guideline §13).
 
 ---
 
-## Stage 2 — the "before" state and the before clips · Claude Code · off the clock
+## Stage 2 — the go · Yeasir · about five minutes
 
-**2a. Plant the problem.** Open a session on the branch and ask, word for word:
+The run's last message names the package, the audit result and the decisions worth knowing. Then:
 
-> Read `demos/s01-cart-drawer-lag/brief.md`. Plan and build the before state: the planted changes in `shopify-dev/s01-cart-drawer-lag/theme/` as one commit, and `demos/s01-cart-drawer-lag/setup/README.md` saying what was planted, any store data it needs (and how to remove it at the reset), and a one-line check that the symptom is present. Plan mode first.
+- Watch `s03-click-to-order-journey-linkedin.mp4` once at phone size with the sound off (a window about 400 px wide), once with it on.
+- Flip through `s03-click-to-order-journey-carousel.pdf`; look at `s03-click-to-order-journey-insight.png`.
+- Read the three copies: `-copy.txt`, `-carousel-copy.txt`, `-insight-copy.txt`.
 
-Claude plans, you approve, Claude writes it, you review the diff line by line. Then:
-
-```bash
-git add -A demos/s01-cart-drawer-lag shopify-dev/s01-cart-drawer-lag && git commit -m "s01: setup — planted before state (off the clock)"
-```
-
-```bash
-tools/shopify/theme.sh push s01-cart-drawer-lag before
-```
-
-It prints the preview link of `s01-cart-drawer-lag · before`. Confirm the symptom yourself in the browser on that link.
-
-Then, if the brief is not on the current template yet, ask:
-
-> Put `demos/s01-cart-drawer-lag/brief.md` on the current template (`demos/_templates/brief.md`): the header clock line, the View line, the shoot list as steps a capture script can drive on the before theme `setup/` just built, Before you start, and an empty Q&A table. Sections 1 and 2 stay word for word. Anything the template needs that the brief does not say is a question for the project chat — list it, don't fill it.
-
-Review the diff line by line — the client's words must not have moved — then:
-
-```bash
-git add demos/s01-cart-drawer-lag/brief.md && git commit -m "s01: brief on template"
-```
-
-**2b. Record the before clips.** Nothing is built until these exist. Ask:
-
-> Write `demos/s01-cart-drawer-lag/capture/` from the brief's shoot list and record the before clips and the before-Lighthouse on the before theme per the video guideline §4, in the view the brief is about (desktop at 1280 px, framed on the part of the page that matters; 390 px only for a mobile problem), before anything is changed. Put the before numbers in `qa.md` row 8 and keep the reports in `media/raw/`.
-
-Review `capture/` line by line. Watch one clip in `media/raw/s01-cart-drawer-lag-before-*` — the symptom has to be plain to see, and no password page or preview bar in frame. Then:
-
-```bash
-git add demos/s01-cart-drawer-lag && git commit -m "s01: capture"
-```
-
-(`media/` is git-ignored; only `capture/` and `qa.md` go in.)
-
-**2c. Log, then start the clock.** Ask:
-
-> Log `Setup complete (off the clock)` and `Before clips recorded (off the clock)` now.
-
-Then, when you are ready to start:
-
-> Log `Brief received` now.
-
-**T0. The clock runs from here to `Handoff sent`.**
+Then tell the VA **go**, or give Claude Code a note in plain words ("scene 3 sounds rushed", "page 4 is crowded", "use the second first line"). It applies the fix, audits again, and comes back for the go.
 
 ---
 
-## Stage 3 — spec, plan, build · Claude Code, one session per task · on the clock
+## Stage 3 — push, review, merge, clean up · Yeasir or Asad, then Yeasir
 
-**3a. Spec.** New session:
-
-> Write `demos/s01-cart-drawer-lag/spec.md` from the brief's mini approach: why, in scope, out of scope, testable done-means, the base theme and the surface for each piece, touchpoints with every Liquid object, schema setting, API or event verified against current Shopify docs, tasks with hours per task, total and delivery date. For section work include the T2.1 build spec.
-
-Review it against the brief, then:
+Alongside the go, not instead of it:
 
 ```bash
-git add demos/s01-cart-drawer-lag/spec.md && git commit -m "s01: spec"
+git push -u origin s03-click-to-order-journey
 ```
 
-The delivery date in `spec.md` is the promise the video shows against `Handoff sent`.
-
-**3b. Plan.** New session, plan mode:
-
-> Plan the build from `demos/s01-cart-drawer-lag/spec.md`. Interrogate scope, the surface and the files for each piece (our own files first, any base-theme edit justified), platform facts verified against current docs, stages and the test plan.
-
-Expect at least one pushback. Record the agreed plan and any pushback under "Agreed plan" in `spec.md`.
-
-**3c. Build.** One stage per ask, spec pasted each time:
-
-> Build stage A of `demos/s01-cart-drawer-lag/spec.md`: <one line naming the stage>. Nothing outside it. List anything you could not implement, and why.
-
-The browser loop while building: `tools/shopify/theme.sh dev s01-cart-drawer-lag` (a private development theme on your store). After every stage, before committing:
-
 ```bash
-tools/shopify/theme.sh check s01-cart-drawer-lag
+gh pr create --fill
 ```
 
-- Console clean; no `Liquid error` on the pages touched.
-- Behaviour checked in the browser, including a mobile width.
-- Diff read line by line (review protocol, house rules §0).
+The PR is read line by line — from the setup commit (`tools/shopify/theme.sh diff s03-click-to-order-journey`), the spec's decisions, the post files. Yeasir merges:
 
 ```bash
-git add -A shopify-dev/s01-cart-drawer-lag && git commit -m "s01 stage A: <what it did>"
+git checkout main && git pull && git merge --no-ff s03-click-to-order-journey && git push
 ```
 
-After the first stage commit: *"Log `First commit` now."* When the feature works end to end: *"Log `Staging ready` now."*
-
-**If Claude Code stops with a question for the client:** it never guesses. Yeasir puts the question to the project chat, pastes the answer into the `## Q&A` table in `brief.md` with both timestamps, commits `s01: client answer`, and asks *"Log `Questions answered` now."* Then amend `spec.md` if the answer changes scope, and continue. That exchange becomes the questions slide.
-
----
-
-## Stage 4 — after clips, QA, handoff, pull request · builder, then reviewer
-
-**4a. After theme, after clips and the QA run.** Push the finished theme:
-
 ```bash
-tools/shopify/theme.sh push s01-cart-drawer-lag after
+git tag s03-click-to-order-journey && git push origin --tags
 ```
 
-New session:
-
-> Re-run `demos/s01-cart-drawer-lag/capture/` on the after theme for the after clips — same view, same framing, same steps — and record the QA run per the video guideline §4: the test order on desktop with an `@example.com` email, the scoped items at 360, 390 and 768 px (emulated), and the after-Lighthouse.
-
-Check `media/raw/s01-cart-drawer-lag-after-*` and `-qa-*`. If a run fails, fix the theme or the script — never the footage.
-
-**4b. QA sheet.** `qa.md`: all 17 rows, with evidence (a clip or screenshot filename in `media/raw/`, or pasted output). Includes the full purchase flow with a Bogus-gateway test order (card `1`) found in admin, the theme editor pass and the scope diff (`tools/shopify/theme.sh diff s01-cart-drawer-lag --stat`). Every check is named as what it was ("360 / 390 / 768 px, emulated", "Chrome"); nothing claims a real device or a browser that was not run. A known defect is not a pass. Then: *"Log `QA passed` now."*
-
-**4c. Handoff.** `handoff.md`: what changed · staging link ("Practice build on a Shopify development store; not publicly available." — no link: the store sits behind its password) · how to use it · rollback · what I'd flag to the client · warranty line. No walkthrough video (retired in guideline v1.2): the demo's one video is Stage 5's. Then: *"Log `Handoff sent` now."* **The clock stops.**
-
-**4d. Pull request.** Cold read as a stranger:
-
 ```bash
-tools/shopify/theme.sh diff s01-cart-drawer-lag
+git branch -d s03-click-to-order-journey && git push origin --delete s03-click-to-order-journey
 ```
 
-Fix nits as one `s01: polish` commit. Then:
+Whoever ran the demo cleans their store — the theme library is capped — and undoes any store data `setup/README.md` lists:
 
 ```bash
-git push -u origin s01-cart-drawer-lag
-```
-
-Open the PR. The other person reviews every line — from the commit after the baseline, so the untouched base theme stays out of the review. Nothing merges yet: the video package (Stage 5) lands on this branch first.
-
----
-
-## Stage 5 — the video package · Claude Code drafts, Yeasir approves · off the clock
-
-**5a. The words.** New session:
-
-> Make the video package for `s01-cart-drawer-lag` per the video guideline. Stop at Approval 1.
-
-Claude Code writes `post/script.md` (seven scenes with the Spoken column — what the voice says, guideline §5; every time, number and quote copied from a file in the folder, and the script names the file), `post/copy.md` (the post text plus two alternative first lines) and `post/check.md` (the self-check). A scene with no real material is dropped, never filled.
-
-**Approval 1 — Yeasir.** Read `script.md` — the lines, the slides and the Spoken words — and `copy.md`. Pick the first line. Edit or approve. Write `Approved 1 — <Day HH:MM> · Yeasir` under an "Approvals" heading in `check.md`. Then:
-
-```bash
-git add demos/s01-cart-drawer-lag/post && git commit -m "s01: script and copy"
-```
-
-**5b. The voice and the cut.** Ask:
-
-> Script and copy approved. Make the voice, render, run the self-check, stop at Approval 2.
-
-Claude Code runs `node tools/video/voice.mjs s01-cart-drawer-lag` (the approved Spoken words in Yeasir's voice clone, each scene checked word for word; on the machine that holds the voice key) and then `node tools/video/render.mjs s01-cart-drawer-lag`, which renders `media/final/`: `s01-cart-drawer-lag-linkedin.mp4` (voiced, with the music bed, clicks and typing), `-cover.png`, `-contact-*.png`, `-timeline.png`, `-copy.txt`, and updates `check.md`. It looks at every contact-sheet frame and records the look.
-
-**Approval 2 — Yeasir.** Watch the video once at phone size with the sound off (a window about 400 px wide), then once with the sound on. Scan the contact sheets — no password page, preview bar, admin, terminal or path in any frame. Every row of `check.md` passed — a fail is fixed or reported, never waved through. A note ("scene 3 sounds rushed", "music too loud") goes back to Claude Code in plain words; each kind has one fix (guideline §10) and a re-render of a few minutes. When it is right, write `Approved 2 — <Day HH:MM> · Yeasir` in `check.md`, then:
-
-```bash
-git add demos/s01-cart-drawer-lag/post && git commit -m "s01: video package"
-```
-
-Any later change to the words goes back to Approval 1, the voice and a re-render.
-
-**5c. To the drive.** Copy the whole `media/` folder to `recordings/shopify/s01-cart-drawer-lag/` on the drive; put the path in `log.md`; tell the VA the demo ID.
-
-**5d. Tuesday carousel** (still drafted in the project chat — guideline §13). Send `log.md`, `qa.md` and `handoff.md` to the chat; it returns the carousel. Approve it, save it as `post/carousel.md`:
-
-```bash
-git add demos/s01-cart-drawer-lag/post/carousel.md && git commit -m "s01: carousel" && git push
+tools/shopify/theme.sh clean s03-click-to-order-journey
 ```
 
 ---
 
-## Stage 6 — merge and clean up · Yeasir, then the builder
+## Stage 4 — publish · VA, then Yeasir
 
-Review complete, both approvals in `check.md`, `media/final/` on the drive. Then:
+Per guideline §9, from `media/final/` on the drive, 7 PM Dhaka, never more than one post a day:
 
-```bash
-git checkout main && git pull && git merge --no-ff s01-cart-drawer-lag && git push
-```
+- **Monday** — the insight post: `-insight.png`, `-insight-copy.txt` pasted exactly, `-insight-alt.txt` as the alt text.
+- **Tuesday** — the video: native upload from a desktop browser, the cover as thumbnail if offered, `-copy.txt` pasted exactly.
+- **Thursday** — the carousel: `-carousel.pdf` as a document, `-carousel-title.txt` as its title, `-carousel-copy.txt` pasted exactly.
 
-```bash
-git tag s01-cart-drawer-lag && git push origin --tags
-```
+Yeasir replies to every comment himself, and records each post's URL and date in `log.md` with one commit straight on `main` — the only direct-to-`main` commit the workflow allows:
 
 ```bash
-git branch -d s01-cart-drawer-lag && git push origin --delete s01-cart-drawer-lag
+git checkout main && git pull && git add demos/s03-click-to-order-journey/log.md && git commit -m "s03: published" && git push
 ```
 
-Whoever pushed the demo's themes cleans their store — the theme library is capped — and undoes any store data `setup/README.md` lists:
-
-```bash
-tools/shopify/theme.sh clean s01-cart-drawer-lag
-```
-
----
-
-## Stage 7 — publish · VA, then Yeasir · Thursday of the following week
-
-Per the video guideline §9, from `media/final/` on the drive:
-
-- **VA, 7 PM Dhaka:** native video upload from a desktop browser, never a link · one video, nothing else attached · the cover image as the thumbnail if offered · auto-captions off, no caption file · paste `s01-cart-drawer-lag-copy.txt` exactly · preview on desktop and on a phone: first frame readable, label visible, link present.
-- **Yeasir:** replies to every comment himself. Then records the post — the URL and date into `log.md` with one commit straight on `main`:
-
-```bash
-git checkout main && git pull && git add demos/s01-cart-drawer-lag/log.md && git commit -m "s01: published" && git push
-```
-
-This is the only direct-to-`main` commit the workflow allows.
-
-- **Seven days later, Yeasir:** who reacted and commented — agency-side people, not totals — into the Sunday scorecard.
+Seven days after each post: who reacted and commented — agency-side people, not totals — into the Sunday scorecard.
 
 ---
 
 ## Done — two gates
 
-**Demo done** (before the merge):
+**Demo done** (guideline §12, before the merge):
 
-- [ ] `brief.md` in the repo, anonymised, on the current template, with any Q&A and timestamps
-- [ ] `spec.md` with the agreed plan, hours and delivery date
-- [ ] `log.md` — every time from the system clock; setup and before clips marked off the clock
-- [ ] `qa.md` — every row passed with evidence
-- [ ] `handoff.md` — with rollback and "what I'd flag"
-- [ ] `capture/` committed; before, after and QA clips in `media/raw/`
-- [ ] `post/script.md` and `post/copy.md` approved, the voice made from them; `post/check.md` every row passed, both approvals recorded
-- [ ] `media/final/` complete and on the drive; the VA has the ID
-- [ ] PR reviewed line by line, merged by Yeasir, tagged, branch deleted
-- [ ] The demo's themes cleaned off the store; any store data undone
+- [ ] `brief.md` in the repo, anonymised, with any Q&A and timestamps
+- [ ] `spec.md` with the plan, the delivery date and every decision made without asking
+- [ ] `log.md` — every time from the system clock; setup, before clips and the post package marked off the clock
+- [ ] `qa.md` — all 17 rows passed with evidence
+- [ ] `handoff.md` — with rollback, "what I'd flag" and the decisions to confirm
+- [ ] the baseline, setup and stage commits in `shopify-dev/<id>/`; `capture/` committed; before, after and QA clips in `media/raw/`
+- [ ] the four post files; `post/check.md` and `post/audit.md` every row passed
+- [ ] `media/final/` complete and on the drive
+- [ ] Yeasir's go
+- [ ] PR reviewed line by line, merged by Yeasir, tagged, branch deleted; the store cleaned
 
-**Video done** (guideline §12): all of the above, plus
-
-- [ ] Published Thursday; post URL and date in `log.md`
+**Posts done:** all of the above, plus all three published and their URLs in `log.md`.
 
 ## Log entries, in order
 
 | Event | When |
 |---|---|
-| Setup complete (off the clock) | Stage 2a done |
-| Before clips recorded (off the clock) | Stage 2b done, before T0 |
-| Brief received | T0 |
+| Setup complete (off the clock) | The before theme is pushed and its check passes |
+| Before clips recorded (off the clock) | Before anything is built |
+| Brief received | T0 — the clock starts |
 | Questions answered | Only if a question went to the project chat |
+| Plan written | `spec.md` done, delivery date set |
 | First commit | First build commit |
-| Staging ready | Feature works end to end |
-| QA passed | `qa.md` complete |
-| Handoff sent | `handoff.md` done; the clock stops |
-| Published | Post URL and date, the Thursday after; added on `main` by Yeasir |
+| Staging ready | Feature works end to end on the after theme |
+| QA passed | `qa.md` complete, the person's steps included |
+| Handoff written | `handoff.md` done; the clock stops |
+| Post package rendered (off the clock) | Video, carousel and insight image rendered, self-check passed |
+| Audit passed (off the clock) | `post/audit.md` passed |
+| Published × 3 | Each post's URL and date; added on `main` by Yeasir |

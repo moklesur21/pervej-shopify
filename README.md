@@ -41,7 +41,9 @@ git checkout -b s01-cart-drawer-lag                       # branch = demo ID, ne
 mkdir -p demos/s01-cart-drawer-lag && git mv demos/_briefs/s01-cart-drawer-lag.md demos/s01-cart-drawer-lag/brief.md
 cp demos/_templates/{spec,log,qa,handoff}.md demos/s01-cart-drawer-lag/
 tools/shopify/theme.sh new s01-cart-drawer-lag dawn       # horizon (default) for new builds; dawn because s01's store is Dawn-based
-# baseline commit → planted setup → push "before" → before clips → spec → build → push "after" + QA → handoff → video package (two approvals) → PR
+# in practice all of this is one run: /demo s01-cart-drawer-lag in a new Claude Code session —
+# baseline commit → planted setup → push "before" → before clips → spec → build → push "after" + QA (one stop: your test order)
+# → handoff → video, carousel and insight post → self-check → audit → the go (Yeasir); the run ends on the local branch
 tools/shopify/theme.sh check s01-cart-drawer-lag          # Theme Check clean before any commit touching the theme
 git push -u origin s01-cart-drawer-lag                    # open a PR; Yeasir reviews line by line and merges
 ```

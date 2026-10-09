@@ -1,6 +1,6 @@
 # Windows — the demo pipeline on Asad's PC
 
-What differs on a Windows PC, done once, plus how a demo runs there. The pipeline is the same on both machines — the same commands, files and approvals; Yeasir works on a Mac, Asad on Windows. The rules are `asset/pervej-demo-video-guideline-v1.4.md` and `asset/pervej-demo-project-plan-v1.md` v1.2, the steps of one demo `docs/demo-procedure.md`, the toolkit `tools/video/README.md`. Asad's first-time checklist, with his real values, is `docs/asad-start-here.md`; this file is the detail behind its Windows steps.
+What differs on a Windows PC, done once, plus how a demo runs there. The pipeline is the same on both machines — the same `/demo <id>` run, commands and files; Yeasir works on a Mac, Asad on Windows. The rules are `asset/pervej-demo-video-guideline-v1.4.md` and `asset/pervej-demo-project-plan-v1.md` v1.2, the steps of one demo `docs/demo-procedure.md`, the toolkit `tools/video/README.md`. Asad's first-time checklist, with his real values, is `docs/asad-start-here.md`; this file is the detail behind its Windows steps.
 
 **Since 7 Oct 2026:** every demo video is voiced with Yeasir's own ElevenLabs voice clone, made by the toolkit; nobody records anything. Shopify has no local store: a demo is built, captured and checked on your own dev store (store B), on its unpublished before and after themes, with what the PC already has — no tunnel, proxy, mail server or extra browser, ever.
 
@@ -90,14 +90,20 @@ The steps are `docs/demo-procedure.md`, unchanged on Windows. The commands:
 ```bash
 tools/shopify/theme.sh push <id> before|after
 node tools/video/capture.mjs <id> before|after|qa
-node tools/video/check.mjs <id>
+node tools/video/check.mjs <id> --words
 node tools/video/voice.mjs <id> --dry
 node tools/video/voice.mjs <id>
 node tools/video/render.mjs <id>
+node tools/video/carousel.mjs <id>
+node tools/video/insight.mjs <id>
+node tools/video/check.mjs <id>
+node tools/video/drive.mjs <id>
 tools/shopify/theme.sh clean <id>
 ```
 
-`voice.mjs` and `render.mjs` refuse until Approval 1 is committed. A render here has its own render hash, so its contact sheets get their own look under "Looked at" in `check.md`. The voice and the music sound the same as on the Mac: the same clone and settings (`tools/video/voice.json`), the music and UI sounds in the repo (`tools/video/audio/`).
+`/demo <id>` in a new Claude Code session runs them in order; `PERVEJ_DRIVE_DIR` in `tools/shopify/.env.local` names this PC's recordings folder (for example `PERVEJ_DRIVE_DIR=G:/My Drive/recordings`).
+
+`voice.mjs`, `render.mjs`, `carousel.mjs` and `insight.mjs` refuse until the words check passes and the post files are committed. A render here has its own hashes, so its contact sheets, carousel and insight image get their own looks under "Looked at" in `check.md`. The voice and the music sound the same as on the Mac: the same clone and settings (`tools/video/voice.json`), the music and UI sounds in the repo (`tools/video/audio/`).
 
 **QA, checked on the dev store** (demo plan v1.2 §7):
 

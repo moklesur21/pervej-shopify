@@ -36,7 +36,7 @@ The full stage list — setup, before clips, spec, build, after clips and QA, ha
 - Theme Check before every commit that touches the theme: `tools/shopify/theme.sh check <id>`. The browser loop is `tools/shopify/theme.sh dev <id>` (a private development theme on your store).
 - Need a shared change (a new rule, a template fix, a tooling fix)? Commit or stash, `git checkout -b chore/<topic> main`, make the change, open a PR, and back on the project branch run `git merge main` once it lands. Never edit shared files on the project branch.
 - Collaborating on the same demo: both commit to the same branch, `git pull --rebase` before every push. Each of you pushes the theme to your **own** dev store to look at it — theme IDs and preview links are per store and live in your git-ignored `demos/<id>/media/themes.json`.
-- Claude sessions: one task per session; paste the spec or brief into the session rather than relying on memory; `docs/house-rules.md` §0 for the ask patterns.
+- Claude sessions: a demo is one run — `/demo <id>` in a new session (`.claude/skills/demo/SKILL.md`), from the brief to the three posts. Anything else: one task per session; paste the spec or brief into the session rather than relying on memory; `docs/house-rules.md` §0 for the ask patterns.
 
 ## 5. Finishing
 

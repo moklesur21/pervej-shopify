@@ -118,7 +118,7 @@ The **ElevenLabs** line: the video's voice is made with a key that belongs to th
 ## 7. Claude Code
 
 - Install it as [T0.3](handbook/T0.3-claude-code-for-shopify.md) describes, with the account Yeasir gives you, then run `claude` from the repo root. It reads `CLAUDE.md` by itself.
-- Use the **ask-first** mode (Shift+Tab until it shows the default mode). Never a mode that acts without asking.
+- Use the **ask-first** mode (Shift+Tab until it shows the default mode). Never a mode that acts without asking — except a demo run (`/demo <id>`), which may run in auto mode (house rules §0).
 - When asked, **approve `shopify-dev-mcp`** (current Shopify docs). Decline `phpstorm` unless you use PhpStorm.
 - Litmus test, once: ask *"Is checkout.liquid still the way to customize checkout?"* The answer must say it's retired. If it explains checkout.liquid instead, the docs server isn't loaded (`/mcp` shows it). Fix that before any work.
 

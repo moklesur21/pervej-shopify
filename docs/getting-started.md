@@ -83,8 +83,8 @@ Your demo store is set up once to the same baseline as Yeasir's (`docs/demo-proc
 
 Run `claude` from the repo root. It reads `CLAUDE.md` automatically — those are the standing orders for every session. House rules from the handbook (T0.3):
 
-- Work in the **ask-first** permission mode. Any mode that lets Claude act without asking is not used here.
-- **Plan mode first** for anything non-trivial; one task per session; small scoped asks.
+- Work in the **ask-first** permission mode. Any mode that lets Claude act without asking is not used here — except a demo run (`/demo <id>`, house rules §0), which may run in auto mode: one session, the whole demo, asking only when blocked.
+- **Plan mode first** for anything non-trivial; one task per session; small scoped asks (outside a demo run).
 - **Review every diff line by line** before approving. You must be able to explain every line you commit.
 - The repo ships a `.mcp.json`. **Approve `shopify-dev-mcp`** — it gives Claude current Shopify docs and validation, so its Liquid and API answers come from shopify.dev, not stale memory. `phpstorm` is optional; decline it if you don't use PhpStorm.
 - Run the litmus test once: ask *"Is checkout.liquid still the way to customize checkout?"* The right answer says it is retired. If you get a checkout.liquid tutorial, the docs server isn't loaded — fix that before any work.
@@ -168,7 +168,7 @@ git push -u origin <demo-id>      # then open the PR
 | Theme library full | `tools/shopify/theme.sh list`, then `clean` finished demos. Never delete a theme you didn't create. |
 | `git status` shows `.env.local`, `shopify.theme.toml` or `.shopify/` | `.gitignore` was edited, or you are not at the repo root. Stop and ask before committing anything. |
 | `git push` rejected on `main` | Correct — nobody pushes to `main`. Push your branch and open a PR. |
-| Claude Code starts in an auto/accept mode | Press Shift+Tab until it shows the default ask-first mode. |
+| Claude Code starts in an auto/accept mode | Fine for a `/demo` run; for anything else press Shift+Tab until it shows the default ask-first mode. |
 | Claude answers a Shopify question from memory | Say "check that against the Shopify docs (MCP) first"; if it keeps happening, the `shopify-dev-mcp` server isn't loaded — `/mcp` to check. |
 
 ---
