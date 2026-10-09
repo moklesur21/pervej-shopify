@@ -1,0 +1,51 @@
+{
+	"permissions": {
+		"allow": [
+			"Bash(tools/shopify/theme.sh doctor:*)",
+			"Bash(tools/shopify/theme.sh new:*)",
+			"Bash(tools/shopify/theme.sh check:*)",
+			"Bash(tools/shopify/theme.sh push:*)",
+			"Bash(tools/shopify/theme.sh preview:*)",
+			"Bash(tools/shopify/theme.sh list:*)",
+			"Bash(tools/shopify/theme.sh diff:*)",
+			"Bash(node tools/video/capture.mjs:*)",
+			"Bash(node tools/video/check.mjs:*)",
+			"Bash(node tools/video/voice.mjs:*)",
+			"Bash(node tools/video/render.mjs:*)",
+			"Bash(node tools/video/carousel.mjs:*)",
+			"Bash(node tools/video/insight.mjs:*)",
+			"Bash(node tools/video/drive.mjs:*)",
+			"Bash(node tools/video/now.mjs)",
+			"Bash(npm --prefix tools/video run doctor)",
+			"Bash(npm --prefix tools/video test)",
+			"Bash(ffmpeg:*)",
+			"Bash(ffprobe:*)",
+			"Bash(git status:*)",
+			"Bash(git diff:*)",
+			"Bash(git log:*)",
+			"Bash(git show:*)",
+			"Bash(git fetch:*)",
+			"Bash(git switch:*)",
+			"Bash(git checkout -b:*)",
+			"Bash(git mv demos/:*)",
+			"Bash(git add demos/:*)",
+			"Bash(git add shopify-dev/:*)",
+			"Bash(git commit:*)",
+			"Edit(./demos/**)",
+			"Write(./demos/**)",
+			"Edit(./shopify-dev/**)",
+			"Write(./shopify-dev/**)",
+			"mcp__shopify-dev-mcp"
+		],
+		"deny": [
+			"Bash(git push:*)",
+			"Bash(git rebase:*)",
+			"Bash(git reset --hard:*)",
+			"Bash(shopify theme publish:*)",
+			"Bash(shopify theme delete:*)",
+			"Bash(tools/shopify/theme.sh clean:*)",
+			"Read(./demos/_briefs/notes/**)",
+			"Read(~/pervej-private/**)"
+		]
+	}
+}

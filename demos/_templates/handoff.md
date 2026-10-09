@@ -22,6 +22,10 @@ Practice build on a Shopify development store; not publicly available.
 
 <one insight the agency can take upstairs and look good with>
 
+## Decisions to confirm
+
+<the choices made without asking that the client should know about, from `spec.md`; "None" if there were none>
+
 ## Warranty
 
 14-day bug warranty on the delivered scope, starting on deploy. Anything in scope that misbehaves, fixed free; new requirements are a change order.

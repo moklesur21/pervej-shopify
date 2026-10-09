@@ -1,6 +1,6 @@
 # Feature: <name>  (six-stage method — stage 1)
 
-Written by the builder from `brief.md` §2 (the mini approach). The brief is the client's input; this is the builder's translation. A real ambiguity goes to the project chat and its answer lands in `brief.md` `## Q&A` before this file changes. Section work adds the T2.1 build spec (structure, theme mapping, hand-written schema, responsive story, assumptions) under "Touchpoints".
+Written by the builder from `brief.md` §2 (the mini approach). The brief is the client's input; this is the builder's translation. An ambiguity that changes what gets built goes to the project chat and its answer lands in `brief.md` `## Q&A` before this file changes; every other decision is made here, written down below, and listed in the handoff for the client to confirm (video guideline §3). Section work adds the T2.1 build spec (structure, theme mapping, hand-written schema, responsive story, assumptions) under "Touchpoints".
 
 ## Why
 
@@ -35,11 +35,23 @@ Written by the builder from `brief.md` §2 (the mini approach). The brief is the
 
 -
 
-## Agreed plan (stage 2 — tasks, hours per task, total, delivery date; recorded after interrogation; note the pushback)
+## Plan (stage 2 — tasks, hours per task, total, delivery date; written after interrogating it; note the pushback)
+
+Nothing waits for a plan approval (video guideline §13): the delivery date written here is the promise the posts show against `Handoff written`.
 
 - A)
 - B)
 - C)
+
+Pushback: <what the interrogation changed>
+
+## Decisions made without asking
+
+Every choice the brief left open that does not change what gets built — and every brief line overruled by a house rule — with its reason. The ones the client should confirm go into `handoff.md`.
+
+| # | Decision | Why | Client to confirm? |
+|---|---|---|---|
+| | | | |
 
 ## Evidence (stage 4)
 

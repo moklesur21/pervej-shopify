@@ -52,11 +52,11 @@ The capture script (`capture/`) is written from this list and the video is cut f
 
 ## Before you start
 
-Baseline theme committed; write and commit the planted before state off the clock (`setup/`); push it as the `before` theme; confirm the symptom on its preview link; have Claude Code write `capture/` and record the before clips and before-Lighthouse; log "setup complete (off the clock)" and "before clips recorded (off the clock)"; then log "brief received". Write `spec.md` from §2 before the first plan-mode session.
+The whole demo is one run: `/demo <id>` (`.claude/skills/demo/SKILL.md`). Off the clock it commits the base theme untouched, plants and commits the before state (`setup/`), pushes it as the `before` theme, confirms the symptom, writes `capture/` and records the before clips and before-Lighthouse; then logs "brief received" and runs spec, build, QA (with one stop for the person's test order and admin screenshots) and handoff on the clock, and the three posts after it.
 
 ## Q&A
 
-Filled only when a real ambiguity goes back to the project chat. Claude Code never invents a client answer. Timestamps in Dhaka time; the answer lands here before `spec.md` changes.
+Filled only when an ambiguity that changes what gets built goes back to the project chat (video guideline §3: ask only when blocked). Claude Code never invents a client answer; every other open choice is a decision written in `spec.md`. Timestamps in Dhaka time; the answer lands here before `spec.md` changes.
 
 | # | Question | Asked | Answer | Answered |
 |---|---|---|---|---|
