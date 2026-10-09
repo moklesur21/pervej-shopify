@@ -46,8 +46,7 @@
 			"Bash(shopify theme publish:*)",
 			"Bash(shopify theme delete:*)",
 			"Bash(tools/shopify/theme.sh clean:*)",
-			"Read(./demos/_briefs/notes/**)",
-			"Read(~/pervej-private/**)"
+			"Read(./demos/_briefs/notes/**)"
 		]
 	}
 }

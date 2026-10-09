@@ -4,7 +4,7 @@ What the people do around one demo run. The run itself — every step Claude Cod
 
 Example ID throughout: `s03-click-to-order-journey`. Replace it with yours — the ID is the name of the brief file waiting in `demos/_briefs/`.
 
-**Never paste into Claude Code:** the Upwork feed, links, full job posts, poster names, the client fact sheet. Claude Code stops if it sees any of them. It receives `brief.md` and nothing else. Private files live outside the repo (`~/pervej-private/`), never in the working tree.
+**Never paste into Claude Code:** the Upwork feed, links, full job posts, poster names, the client fact sheet. Claude Code stops if it sees any of them. It receives `brief.md` and nothing else. Yeasir's private files (`demos/_briefs/notes/`, the internal strategy in `asset/`) are untracked and stay on his Mac: never committed, never opened by a run (`.claude/settings.json` denies them).
 
 **One run, one session.** The demo is one task: a new Claude Code session, one line, and the next thing you see is a finished, audited package — with one stop at QA for what only a person may do. Auto mode is fine for a demo run (it is the one exception to ask-first, house rules §0); the repo's `.claude/settings.json` already allows the run's own commands and denies git push, theme publish and theme delete.
 

@@ -57,7 +57,7 @@ Write the output as is (`Fri 9 Oct 10:42`) into the event's row. A missed time c
 ### 0. Preflight
 
 - `git fetch --quiet`, then `git status -sb`. On `main`, no changes to tracked files, `main` not behind `origin/main`. If branch `<id>` already exists, **resume** instead: `git switch <id>`, read `demos/<id>/log.md`, `spec.md`, `post/check.md` and `git log main..HEAD`, and continue from the first step not done. Never re-log an event that has a time.
-- `demos/_briefs/<id>.md` exists. `demos/_briefs/notes/` does not exist (if it does, stop: private files are in the working tree).
+- `demos/_briefs/<id>.md` exists. `demos/_briefs/notes/` and any internal file in `asset/` are Yeasir's private files: untracked, on his machine only, denied in `.claude/settings.json` — never opened, never staged, never mentioned in a demo's files.
 - Read the brief once, whole. Scan it for marketplace names, links and poster names (stop reason 4). Note anything that is a stop reason 1 — but don't stop yet. The whole ID is unique, the number alone may not be: if another brief in `demos/_briefs/`, a folder in `demos/` or a tag uses the same number, `<sid>` below is the full ID (`theme.sh diff` finds either form).
 - `tools/shopify/theme.sh doctor` and `npm --prefix tools/video run doctor`: every line `[ok]` — the store answers, the storefront password is accepted, the CLI is logged in. A CLI that wants a login is stop reason 2, now. A missing ElevenLabs key becomes a stop at step 10, after everything that doesn't need it.
 
