@@ -43,13 +43,19 @@ async function main() {
 	fs.rmSync( work, { recursive: true, force: true } );
 	ensureDir( work );
 	ensureDir( demo.final );
+	// An older image goes first, so a failed run never leaves one that looks current.
+	for ( const suffix of [ 'insight.png', 'insight-copy.txt', 'insight-alt.txt' ] ) {
+		fs.rmSync( demo.finalFile( suffix ), { force: true } );
+	}
 	console.log( `Insight ${ demo.id } · insight.md ${ pkg.insightSha } (words ${ gate.commit }) · ${ image.layout } and line` );
 
 	// The label goes on whenever the image shows the demo: always for a still; for a number, unless the
 	// number is the outside figure rather than one from the demo's files (§7b).
+	// The same digit-bounded match as the Sources row: 53% is not found inside 2.53 s.
 	const corpus = image.sources.map( ( name ) => readText( demo.file( name ) ) || '' ).join( '\n' );
-	const digits = ( image.number.match( /\d+(?:[.,:]\d+)*/ ) || [ image.number ] )[ 0 ];
-	const outsideNumber = image.layout === 'number' && pkg.insight.outside.length > 0 && ! corpus.includes( digits );
+	const token = ( image.number.match( /\d+(?:[:.,/]\d+)*%?/ ) || [ image.number ] )[ 0 ];
+	const found = new RegExp( `(?<![\\d])${ token.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }(?![\\d])` ).test( corpus );
+	const outsideNumber = image.layout === 'number' && pkg.insight.outside.length > 0 && ! found;
 	const label = outsideNumber ? null : pkg.brand.label;
 
 	const out = {

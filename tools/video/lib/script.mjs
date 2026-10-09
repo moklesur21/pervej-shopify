@@ -372,7 +372,8 @@ export function parseCarousel( md ) {
 				if ( r.every( ( x ) => ! x ) ) {
 					continue;
 				}
-				const n = Number( plain( r[ c.n ] ) ) || pages.length + 1;
+				// Numbered by position, so a dropped or repeated # never breaks the counter or a file name.
+				const n = pages.length + 1;
 				const page = { n, middle: parsePage( r[ c.middle ] || '', errors, n ), line: plain( r[ c.band ] ), sources: parseSources( r[ c.source ] || '', errors, n, 'Page' ) };
 				if ( ! page.line ) {
 					errors.push( `Page ${ n }: no line for the bottom band.` );
@@ -472,7 +473,9 @@ export function parseInsight( md ) {
 			const col = ( re ) => t.header.findIndex( ( h ) => re.test( h.trim() ) );
 			const c = { source: col( /^source/i ), url: col( /^url/i ), sentence: col( /^sentence/i ), checked: col( /^checked/i ) };
 			for ( const r of t.rows.filter( ( x ) => x.some( Boolean ) ) ) {
-				outside.push( { source: plain( r[ c.source ] ), url: plain( r[ c.url ] ), sentence: plain( r[ c.sentence ] ), checked: plain( r[ c.checked ] ) } );
+				// The URL as written, less backticks and <angle brackets>; plain() would drop its underscores.
+				const url = String( r[ c.url ] || '' ).replace( /`/g, '' ).trim().replace( /^<(.*)>$/, '$1' );
+				outside.push( { source: plain( r[ c.source ] ), url, sentence: plain( r[ c.sentence ] ), checked: plain( r[ c.checked ] ) } );
 			}
 		}
 	}

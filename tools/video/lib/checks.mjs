@@ -100,6 +100,22 @@ async function strips( file, everySecond ) {
 	return stdout;
 }
 
+/**
+ * Why a "Clip <name> at N s" picture can't be taken, or null: the clip must exist and the moment sit
+ * inside it — ffmpeg writes nothing for a moment at or near the very end.
+ */
+function frameProblem( demo, pic ) {
+	if ( pic?.kind !== 'frame' ) {
+		return null;
+	}
+	const sidecar = readText( demo.rawFile( `${ demo.id }-${ pic.name }.json` ) );
+	if ( ! sidecar || ! fs.existsSync( demo.rawFile( `${ demo.id }-${ pic.name }.mp4` ) ) ) {
+		return `clip "${ pic.name }" was not captured`;
+	}
+	const seconds = JSON.parse( sidecar ).seconds;
+	return pic.at > seconds - 0.1 ? `${ pic.at } s is not inside "${ pic.name }" (${ seconds } s; at least 0.1 s before its end)` : null;
+}
+
 /** A command's manifest, if it was made from the current file; `stale` when an older one exists. */
 function rendered( dir, sha, key, finalFile ) {
 	const text = readText( path.join( dir, 'manifest.json' ) );
@@ -150,7 +166,8 @@ export async function checkWords( demo ) {
 }
 
 async function collect( demo, wordsOnly ) {
-	const pkg = loadPackage( demo );
+	// Words only: the plan is timed silently, so a take's length (a voice matter) never fails the words.
+	const pkg = loadPackage( demo, { silent: wordsOnly } );
 	const { brand, script, copy, clips, plan, carousel, insight } = pkg;
 	const rows = [];
 	const scenes = script.scenes;
@@ -209,7 +226,7 @@ async function collect( demo, wordsOnly ) {
 			problems.push( qa === null ? 'qa.md does not exist' : 'qa.md has no table with a Result column' );
 		} else {
 			const at = table.header.findIndex( ( h ) => /^result$/i.test( h.trim() ) );
-			const open = table.rows.filter( ( r ) => r.some( Boolean ) && ! /^(?:pass(?:ed)?|ok|✓)\b/i.test( plain( r[ at ] ) ) );
+			const open = table.rows.filter( ( r ) => r.some( Boolean ) && ! /^(?:(?:pass(?:ed)?|ok)\b|✓)/i.test( plain( r[ at ] ) ) );
 			if ( open.length ) {
 				problems.push( `qa.md: ${ open.length } line(s) not passed — ${ open.map( ( r ) => plain( r[ 0 ] ) ).join( ', ' ) }` );
 			}
@@ -432,7 +449,7 @@ async function collect( demo, wordsOnly ) {
 			carousel.copy.alternatives.forEach( ( a, i ) => scan( `carousel alternative ${ i + 1 }`, a, BANNED ) );
 		}
 		if ( insight ) {
-			imageWords.forEach( ( t ) => scan( 'insight image', t, BANNED ) );
+			[ ...imageWords, image.sourceLine ].filter( Boolean ).forEach( ( t ) => scan( 'insight image', t, BANNED ) );
 			scan( 'insight copy', insightPost, [ ...BANNED, ...COPY_ONLY ] );
 			scan( 'insight alt text', insight.alt, BANNED );
 			insight.copy.alternatives.forEach( ( a, i ) => scan( `insight alternative ${ i + 1 }`, a, BANNED ) );
@@ -442,7 +459,7 @@ async function collect( demo, wordsOnly ) {
 
 	// Leaks.
 	{
-		const texts3 = [ ...allScreen, ...allSpoken, post, ...pageTexts.flatMap( ( p ) => p.texts ), carouselPost, ...imageWords, insightPost ];
+		const texts3 = [ ...allScreen, ...allSpoken, post, ...pageTexts.flatMap( ( p ) => p.texts ), carouselPost, ...imageWords, image?.sourceLine || '', insightPost ];
 		const hits = texts3.filter( ( t ) => LEAK.test( t ) ).map( ( t ) => `"${ t.match( LEAK )[ 0 ] }" in "${ t.slice( 0, 50 ) }"` );
 		// Every rendered file is looked at, each for its own hash (§8 hard stops).
 		const looks = [];
@@ -676,13 +693,9 @@ async function collect( demo, wordsOnly ) {
 				if ( middle?.kind === 'still' && ! fs.existsSync( demo.rawFile( `${ demo.id }-${ middle.name }.png` ) ) ) {
 					problems.push( `page ${ n }: no still ${ demo.id }-${ middle.name }.png in media/raw/` );
 				}
-				if ( middle?.kind === 'frame' ) {
-					const sidecar = readText( demo.rawFile( `${ demo.id }-${ middle.name }.json` ) );
-					if ( ! sidecar ) {
-						problems.push( `page ${ n }: clip "${ middle.name }" was not captured` );
-					} else if ( middle.at > JSON.parse( sidecar ).seconds ) {
-						problems.push( `page ${ n }: ${ middle.at } s is past the end of "${ middle.name }"` );
-					}
+				const frame = frameProblem( demo, middle );
+				if ( frame ) {
+					problems.push( `page ${ n }: ${ frame }` );
 				}
 			}
 			const first = pages[ 0 ]?.middle;
@@ -741,6 +754,10 @@ async function collect( demo, wordsOnly ) {
 			}
 			if ( image.layout === 'still' && image.picture?.kind === 'still' && ! fs.existsSync( demo.rawFile( `${ demo.id }-${ image.picture.name }.png` ) ) ) {
 				problems.push( `no still ${ demo.id }-${ image.picture.name }.png in media/raw/` );
+			}
+			const frame = image.layout === 'still' ? frameProblem( demo, image.picture ) : null;
+			if ( frame ) {
+				problems.push( frame );
 			}
 			details.push( `${ image.layout || '—' } and line; alt text set` );
 			if ( ir.manifest ) {

@@ -14,7 +14,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parseCarousel, parseInsight } from '../lib/script.mjs';
 import { resolveDemo } from '../lib/paths.mjs';
-import { checkWords } from '../lib/checks.mjs';
+import { checkWords, runCheck } from '../lib/checks.mjs';
 import { wordsGate } from '../lib/gate.mjs';
 
 const LABEL = 'Practice build from a public job brief. Anonymised.';
@@ -143,4 +143,26 @@ test( 'planted errors fail the words check: an unsourced number, a question and 
 	assert.match( all, /carries the ask/ );
 	assert.match( all, /carousel and insight posts open on the same sentence/ );
 	assert.equal( ( await wordsGate( demo ) ).ok, false );
+} );
+
+test( 'review fixes: pages numbered by position, a bracketed URL kept whole', () => {
+	const c = parseCarousel( FILES[ 'post/carousel.md' ].replace( '| 3 | Slide:', '| 2 | Slide:' ) );
+	assert.deepEqual( c.pages.map( ( pg ) => pg.n ), [ 1, 2, 3, 4, 5, 6, 7 ] );
+	const i = parseInsight( '## Image\n\nLayout: number\nNumber: 70%\nLine: x\nSource line: y\nSource: qa\n\n## Outside figure\n\n| Source | URL | Sentence | Checked |\n|---|---|---|---|\n| B | <https://example.com/a_b> | 70% | 9 Oct 2026 |\n' );
+	assert.equal( i.outside[ 0 ].url, 'https://example.com/a_b' );
+} );
+
+test( 'review fixes: a ✓ in qa.md passes the Delivery row; a frame at a clip\'s end is refused before any render', async () => {
+	const demo = fixture( {
+		'qa.md': '| # | Item | Result |\n|---|---|---|\n| 1 | Lighthouse 61 before, 74 after | ✓ |\n',
+		'post/carousel.md': FILES[ 'post/carousel.md' ].replace( '| 4 | Slide: *One cause, one fix* |', '| 4 | Clip after-checkout at 3 s |' ),
+	} );
+	fs.writeFileSync( demo.rawFile( 'zz-post-test-before-checkout.mp4' ), '' );
+	fs.writeFileSync( demo.rawFile( 'zz-post-test-after-checkout.mp4' ), '' );
+	fs.writeFileSync( demo.rawFile( 'zz-post-test-after-checkout.json' ), JSON.stringify( { seconds: 3 } ) );
+	const words = await checkWords( demo );
+	assert.match( words.problems.join( '\n' ), /page 4: 3 s is not inside "after-checkout"/ );
+	await runCheck( demo );
+	const md = fs.readFileSync( path.join( demo.post, 'check.md' ), 'utf8' );
+	assert.match( md, /\| Delivery \| PASS \|/ );
 } );

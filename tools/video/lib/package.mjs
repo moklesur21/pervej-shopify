@@ -14,10 +14,12 @@ import { currentVoice } from './voice.mjs';
 export const sha = ( text ) => crypto.createHash( 'sha1' ).update( text.replace( /\r\n/g, '\n' ) ).digest( 'hex' ).slice( 0, 7 );
 
 /**
- * @param {object} demo Demo paths.
+ * @param {object}  demo        Demo paths.
+ * @param {object}  opts        Options.
+ * @param {boolean} opts.silent Time the plan without the voice (the words check: a take's length is not a words matter).
  * @return {object} { brand, scriptMd, script, copy, clips, plan, carousel, insight, shas, errors }.
  */
-export function loadPackage( demo ) {
+export function loadPackage( demo, { silent = false } = {} ) {
 	const errors = [];
 	const scriptMd = readText( path.join( demo.post, 'script.md' ) );
 	const copyMd = readText( path.join( demo.post, 'copy.md' ) );
@@ -55,7 +57,7 @@ export function loadPackage( demo ) {
 	// The plan is timed to the voice once every scene's voice matches the checked words; until then it is silent.
 	const voice = currentVoice( demo, script );
 	const voiced = voice.chunks.length > 0 && ! voice.problems.length;
-	const timed = plan( script.scenes, clips, b, voiced ? new Map( [ ...voice.map ].map( ( [ n, v ] ) => [ n, v.seconds ] ) ) : new Map() );
+	const timed = plan( script.scenes, clips, b, voiced && ! silent ? new Map( [ ...voice.map ].map( ( [ n, v ] ) => [ n, v.seconds ] ) ) : new Map() );
 	errors.push( ...timed.errors );
 	return {
 		brand: b,

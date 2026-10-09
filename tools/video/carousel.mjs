@@ -45,6 +45,10 @@ async function main() {
 	fs.rmSync( work, { recursive: true, force: true } );
 	ensureDir( work );
 	ensureDir( demo.final );
+	// An older carousel goes first, so a failed run never leaves one that looks current.
+	for ( const suffix of [ 'carousel.pdf', 'carousel-contact.png', 'carousel-copy.txt', 'carousel-title.txt' ] ) {
+		fs.rmSync( demo.finalFile( suffix ), { force: true } );
+	}
 	console.log( `Carousel ${ demo.id } · carousel.md ${ pkg.carouselSha } (words ${ gate.commit }) · ${ pages.length } pages` );
 
 	const out = {
@@ -81,7 +85,11 @@ async function main() {
 		}
 
 		const pdfPages = await painter.pdf( drawn.map( ( d ) => path.join( work, d.png ) ), out.pdf );
-		const hash = crypto.createHash( 'sha1' ).update( fs.readFileSync( out.pdf ) ).digest( 'hex' ).slice( 0, 7 );
+		// Hashed from the drawn pages, not the PDF: its bytes carry a creation time, so the same pages would
+		// get a new hash on every run and void the look recorded for them.
+		const sha = crypto.createHash( 'sha1' );
+		drawn.forEach( ( d ) => sha.update( fs.readFileSync( path.join( work, d.png ) ) ) );
+		const hash = sha.digest( 'hex' ).slice( 0, 7 );
 		await painter.sheet( {
 			title: `${ demo.id } · carousel · ${ pages.length } pages · carousel ${ hash }`,
 			columns: SHEET.columns,

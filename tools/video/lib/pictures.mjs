@@ -31,7 +31,11 @@ export async function placePicture( demo, pic, work, middle ) {
 			throw new Error( `No clip ${ path.basename( mp4 ) } in media/raw/ — capture it first.` );
 		}
 		file = path.join( work, `frame-${ pic.name }-${ String( pic.at ).replace( '.', '_' ) }.png` );
+		fs.rmSync( file, { force: true } );
 		await ffmpeg( [ '-ss', String( pic.at ), '-i', mp4, '-frames:v', '1', '-vf', `scale=${ FROM_YUV },format=rgb24`, file ] );
+		if ( ! fs.existsSync( file ) ) {
+			throw new Error( `No frame at ${ pic.at } s in ${ path.basename( mp4 ) }: pick a moment inside the clip.` );
+		}
 	}
 	const size = pngSize( fs.readFileSync( file ) );
 	const scale = Math.min( 1, middle.width / size.width, middle.height / size.height );
