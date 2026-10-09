@@ -1,6 +1,6 @@
 # Windows — the demo pipeline on Asad's PC
 
-What differs on a Windows PC, done once, plus how a demo runs there. The pipeline is the same on both machines — the same commands, files and approvals; Yeasir works on a Mac, Asad on Windows. The rules are `asset/pervej-demo-video-guideline-v1.2.md` and `asset/pervej-demo-project-plan-v1.md` v1.2, the steps of one demo `docs/demo-procedure.md`, the toolkit `tools/video/README.md`. Asad's first-time checklist, with his real values, is `docs/asad-start-here.md`; this file is the detail behind its Windows steps.
+What differs on a Windows PC, done once, plus how a demo runs there. The pipeline is the same on both machines — the same commands, files and approvals; Yeasir works on a Mac, Asad on Windows. The rules are `asset/pervej-demo-video-guideline-v1.4.md` and `asset/pervej-demo-project-plan-v1.md` v1.2, the steps of one demo `docs/demo-procedure.md`, the toolkit `tools/video/README.md`. Asad's first-time checklist, with his real values, is `docs/asad-start-here.md`; this file is the detail behind its Windows steps.
 
 **Since 7 Oct 2026:** every demo video is voiced with Yeasir's own ElevenLabs voice clone, made by the toolkit; nobody records anything. Shopify has no local store: a demo is built, captured and checked on your own dev store (store B), on its unpublished before and after themes, with what the PC already has — no tunnel, proxy, mail server or extra browser, ever.
 

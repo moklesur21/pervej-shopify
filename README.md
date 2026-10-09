@@ -4,7 +4,7 @@ Shopify practice builds for pervej.com — run exactly like client jobs, capture
 
 Who: **Yeasir** (lead; reviews and merges), **Asad** (developer), **Claude Code** (build engine; the client role lives in the project chat, never here).
 
-Read in this order: [`CLAUDE.md`](CLAUDE.md) (rules that are always on) → [`docs/workflow.md`](docs/workflow.md) (branches, collaboration, stores) → [`docs/house-rules.md`](docs/house-rules.md) (the full rulebook) → [`docs/demo-procedure.md`](docs/demo-procedure.md) (one demo, step by step) → [`asset/pervej-demo-project-plan-v1.md`](asset/pervej-demo-project-plan-v1.md) (how a demo runs) → [`asset/pervej-demo-cycle-runbook-v1.md`](asset/pervej-demo-cycle-runbook-v1.md) (what the project chat does and what this repo receives) → [`asset/pervej-demo-video-guideline-v1.2.md`](asset/pervej-demo-video-guideline-v1.2.md) (how the video and its post copy are made).
+Read in this order: [`CLAUDE.md`](CLAUDE.md) (rules that are always on) → [`docs/workflow.md`](docs/workflow.md) (branches, collaboration, stores) → [`docs/house-rules.md`](docs/house-rules.md) (the full rulebook) → [`docs/demo-procedure.md`](docs/demo-procedure.md) (one demo, step by step) → [`asset/pervej-demo-project-plan-v1.md`](asset/pervej-demo-project-plan-v1.md) (how a demo runs) → [`asset/pervej-demo-cycle-runbook-v1.md`](asset/pervej-demo-cycle-runbook-v1.md) (what the project chat does and what this repo receives) → [`asset/pervej-demo-video-guideline-v1.4.md`](asset/pervej-demo-video-guideline-v1.4.md) (how the video and its post copy are made).
 
 New on the team? Start with [`docs/getting-started.md`](docs/getting-started.md): tools, Partner access, your dev stores, your first branch and pull request.
 
@@ -18,7 +18,7 @@ New on the team? Start with [`docs/getting-started.md`](docs/getting-started.md)
 | `docs/handbook/` | The T-series handbook: catalog, strategy v1.4, tutorials T0.1–T8. The training *sandbox* is personal and lives outside the repo — see `docs/training-index.md`. |
 | `tools/shopify/` | `theme.sh`: base theme, dev loop, Theme Check, push to your store's unpublished themes, review diff, clean-up. |
 | `tools/video/` | The video toolkit: capture helpers, slide templates, the voice (Yeasir's ElevenLabs clone), render with the music bed, clicks and typing, self-check. Same commands on macOS and Windows. Install and usage in its README; Windows setup in `docs/windows.md`. |
-| `asset/` | Strategy v1.2, demo-project plan v1.2, content-engine playbook v1.0, proof-content ad strategy v1.0, demo cycle runbook v1.1, demo video guideline v1.2 — the same files as in `pervej-woo`. Read-only reference. |
+| `asset/` | Strategy v1.2, demo-project plan v1.2, content-engine playbook v1.0, proof-content ad strategy v1.0, demo cycle runbook v1.1, demo video guideline v1.4 — the same files as in `pervej-woo`. Read-only reference. |
 
 ## First-time setup (each machine, about fifteen minutes)
 

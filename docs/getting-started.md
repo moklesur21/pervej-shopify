@@ -14,7 +14,7 @@ Ask Yeasir when something here does not match what you see. Do not improvise aro
 - **Work happens on branches.** The default branch is `main`. Nobody commits to `main` directly; Yeasir merges pull requests into it.
 - **Training is separate.** The T-series handbook lives in `docs/handbook/`, but you do the tutorials in your own sandbox (section 7), not in this repo.
 
-Read after this guide, in order: `CLAUDE.md` (rules that are always on), `docs/workflow.md` (branches and collaboration), `docs/house-rules.md` (the full rulebook), `demos/README.md` (how a demo runs), `docs/demo-procedure.md` (one demo step by step), `asset/pervej-demo-cycle-runbook-v1.md` (what the project chat does and what this repo receives), `asset/pervej-demo-video-guideline-v1.2.md` (how the video and its post copy are made).
+Read after this guide, in order: `CLAUDE.md` (rules that are always on), `docs/workflow.md` (branches and collaboration), `docs/house-rules.md` (the full rulebook), `demos/README.md` (how a demo runs), `docs/demo-procedure.md` (one demo step by step), `asset/pervej-demo-cycle-runbook-v1.md` (what the project chat does and what this repo receives), `asset/pervej-demo-video-guideline-v1.4.md` (how the video and its post copy are made).
 
 ---
 

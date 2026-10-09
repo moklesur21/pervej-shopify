@@ -1,6 +1,6 @@
 # tools/video — the video toolkit
 
-Turns a finished demo into Thursday's LinkedIn video, as `asset/pervej-demo-video-guideline-v1.2.md` describes (§4 capture, §5 script, §6 the edit, §8 the self-check, §10 the voice, §11 this toolkit). Four commands do it: **capture** records the storefront, **voice** reads the approved Spoken words in Yeasir's own voice, **render** cuts the approved script into the voiced video, **check** writes the self-check into `post/check.md`. When and by whom each runs is `docs/demo-procedure.md` (Stages 2b, 4a, 5). It runs the same on macOS and Windows; `docs/windows.md` is the Windows setup.
+Turns a finished demo into Thursday's LinkedIn video, as `asset/pervej-demo-video-guideline-v1.4.md` describes (§4 capture, §5 script, §6 the edit, §8 the self-check, §10 the voice, §11 this toolkit). Four commands do it: **capture** records the storefront, **voice** reads the approved Spoken words in Yeasir's own voice, **render** cuts the approved script into the voiced video, **check** writes the self-check into `post/check.md`. When and by whom each runs is `docs/demo-procedure.md` (Stages 2b, 4a, 5). It runs the same on macOS and Windows; `docs/windows.md` is the Windows setup.
 
 Free, openly licensed tools: Playwright and Lighthouse (Apache-2.0), ffmpeg (LGPL/GPL), IBM Plex Sans (SIL OFL 1.1, bundled in `slides/fonts/` with its licence). One paid service: ElevenLabs, on Yeasir's account, for the voice. The music bed, clicks and typing in `audio/` were made with it and are licensed for commercial use (`audio/audio.json`).
 

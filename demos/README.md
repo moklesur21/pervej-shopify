@@ -1,6 +1,6 @@
 # demos/ — one folder per practice build
 
-The operating manual is `asset/pervej-demo-project-plan-v1.md` (rules, scoring, QA); the chat-to-repo handoff is `asset/pervej-demo-cycle-runbook-v1.md`; how the video and its post copy are made is `asset/pervej-demo-video-guideline-v1.2.md`, which takes precedence on that topic. This is the folder-level summary; the step-by-step is `docs/demo-procedure.md`.
+The operating manual is `asset/pervej-demo-project-plan-v1.md` (rules, scoring, QA); the chat-to-repo handoff is `asset/pervej-demo-cycle-runbook-v1.md`; how the video and its post copy are made is `asset/pervej-demo-video-guideline-v1.4.md`, which takes precedence on that topic. This is the folder-level summary; the step-by-step is `docs/demo-procedure.md`.
 
 ## The one rule
 

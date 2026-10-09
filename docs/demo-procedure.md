@@ -1,6 +1,6 @@
 # Demo procedure — one demo, from the brief to the finished video
 
-The checklist for running one practice build from the brief file to the published LinkedIn video. Rules live in `CLAUDE.md` and `docs/house-rules.md`; the why is in `asset/pervej-demo-project-plan-v1.md`, `asset/pervej-demo-cycle-runbook-v1.md` and, for the video and its post copy, `asset/pervej-demo-video-guideline-v1.2.md`. This file only says **who does what, in what order, with which command or ask.**
+The checklist for running one practice build from the brief file to the published LinkedIn video. Rules live in `CLAUDE.md` and `docs/house-rules.md`; the why is in `asset/pervej-demo-project-plan-v1.md`, `asset/pervej-demo-cycle-runbook-v1.md` and, for the video and its post copy, `asset/pervej-demo-video-guideline-v1.4.md`. This file only says **who does what, in what order, with which command or ask.**
 
 Example ID throughout: `s01-cart-drawer-lag`. Replace it with yours — the ID is the name of the brief file waiting in `demos/_briefs/`.
 
