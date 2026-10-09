@@ -17,7 +17,7 @@ Read before step 1, in this order: `CLAUDE.md` (the hard rules — all of them s
 - Never edit shared files on the demo branch: `CLAUDE.md`, `docs/`, `tools/`, `demos/_templates/`, `demos/_briefs/`, `.claude/`, `.gitignore`, `.mcp.json`. A needed shared change goes in the final message as a proposal.
 - Never type the storefront password or an admin sign-in, anywhere — in the built-in browser too. The toolkit reads the storefront password from `tools/shopify/.env.local`; the admin is a person's.
 - Never enter a card number, not even the test gateway's: the test checkout is a person's step (step 7).
-- Never open `demos/_briefs/notes/`, anything marked internal, or a file the brief says not to open.
+- Never open a file the brief says not to open, nor this demo's own setup sheet or answer key in `demos/_briefs/notes/`: a demo prepared by someone else is audited blind. The rest of `demos/_briefs/notes/` — the client fact sheets, other notes — is there to use.
 - Never write a time from memory: every `log.md` time comes from `node tools/video/now.mjs` at the moment it happens.
 - Never present a decision as a client answer, and never call anything "approved" or "accepted" that wasn't.
 - Never read, print or store the ElevenLabs key or any store token.
@@ -31,10 +31,12 @@ Inside the run, the demo's own state changes — `theme.sh new`, commits on the 
 
 Stop for one of these and nothing else:
 
-1. **A real ambiguity in the brief that changes what gets built** — a fork the brief, its mini approach and the client's done-list don't settle.
+1. **A real ambiguity in the brief that changes what gets built**, and that the client fact sheet doesn't answer — a fork the brief, its mini approach and the client's done-list don't settle.
 2. **Something the run can't do on its own:** the Shopify CLI asks to log in, a store token or app credential is needed, a missing asset, a tool that won't install, `main` behind `origin/main`, a brief that needs a live store (never done: propose the replacement instead) — and **the person's steps at QA** (step 7).
 3. **An audit that still fails after two rounds of fixes** (step 11).
 4. **Marketplace material in the brief** — a job post, a feed, a poster's name, a marketplace link (`CLAUDE.md`): stop and say so; never use it.
+
+**The fact sheet first.** A question the client fact sheet answers is the client's own answer: write it into `brief.md` `## Q&A` as answered from the client's fact sheet, with the time, log `Questions answered`, and carry on — no stop. Its "client's own checks at handoff" are run before the handoff and recorded in `qa.md`, so the delivery is checked the way the client would check it.
 
 When you stop: first do everything that doesn't depend on the answer (the base theme, the setup and the before clips are always independent of a client question). Then ask **one** message: what you need, why, and what happens next. A question for the client goes to the project chat through Yeasir; when the answer comes back, append it to `brief.md` `## Q&A` with both times, commit `<sid>: client answer`, log `Questions answered`, amend `spec.md` if scope moved, and carry on.
 
@@ -57,7 +59,7 @@ Write the output as is (`Fri 9 Oct 10:42`) into the event's row. A missed time c
 ### 0. Preflight
 
 - `git fetch --quiet`, then `git status -sb`. On `main`, no changes to tracked files, `main` not behind `origin/main`. If branch `<id>` already exists, **resume** instead: `git switch <id>`, read `demos/<id>/log.md`, `spec.md`, `post/check.md` and `git log main..HEAD`, and continue from the first step not done. Never re-log an event that has a time.
-- `demos/_briefs/<id>.md` exists. `demos/_briefs/notes/` and any internal file in `asset/` are Yeasir's private files: untracked, on his machine only, denied in `.claude/settings.json` — never opened, never staged, never mentioned in a demo's files.
+- `demos/_briefs/<id>.md` exists. If `demos/_briefs/notes/pervej-demo-fact-sheets-v1.md` (or a newer version) has a section for this demo, read it now: it holds the client's answers and the client's own checks at handoff.
 - Read the brief once, whole. Scan it for marketplace names, links and poster names (stop reason 4). Note anything that is a stop reason 1 — but don't stop yet. The whole ID is unique, the number alone may not be: if another brief in `demos/_briefs/`, a folder in `demos/` or a tag uses the same number, `<sid>` below is the full ID (`theme.sh diff` finds either form).
 - `tools/shopify/theme.sh doctor` and `npm --prefix tools/video run doctor`: every line `[ok]` — the store answers, the storefront password is accepted, the CLI is logged in. A CLI that wants a login is stop reason 2, now. A missing ElevenLabs key becomes a stop at step 10, after everything that doesn't need it.
 

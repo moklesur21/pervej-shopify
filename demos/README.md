@@ -4,7 +4,7 @@ The operating manual is `asset/pervej-demo-project-plan-v1.md` (rules, scoring, 
 
 ## The one rule
 
-**Upwork stops at the project chat.** The feed, screenshots, links, full job posts, the shortlist, the picks and the client fact sheet live only in the claude.ai project chat. This repo receives exactly one thing per demo: the finished brief, already anonymised, in our own format. Claude Code never sees any Upwork material and never invents a client answer.
+**Upwork stops at the project chat.** The feed, screenshots, links, full job posts, the shortlist and the picks live only in the claude.ai project chat. The client fact sheets, setup sheets and notes the chat writes are in `demos/_briefs/notes/`, for both builders and Claude Code (owner decision, 9 Oct 2026); a demo's run never opens its own setup sheet. This repo receives exactly one thing per demo: the finished brief, already anonymised, in our own format. Claude Code never sees any Upwork material and never invents a client answer.
 
 ## A demo on disk
 

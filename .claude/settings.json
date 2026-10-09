@@ -45,8 +45,7 @@
 			"Bash(git reset --hard:*)",
 			"Bash(shopify theme publish:*)",
 			"Bash(shopify theme delete:*)",
-			"Bash(tools/shopify/theme.sh clean:*)",
-			"Read(./demos/_briefs/notes/**)"
+			"Bash(tools/shopify/theme.sh clean:*)"
 		]
 	}
 }
