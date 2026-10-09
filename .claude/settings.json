@@ -5,6 +5,8 @@
 			"Bash(tools/shopify/theme.sh new:*)",
 			"Bash(tools/shopify/theme.sh check:*)",
 			"Bash(tools/shopify/theme.sh push:*)",
+			"Bash(tools/shopify/theme.sh publish:*)",
+			"Bash(tools/shopify/theme.sh restore:*)",
 			"Bash(tools/shopify/theme.sh preview:*)",
 			"Bash(tools/shopify/theme.sh list:*)",
 			"Bash(tools/shopify/theme.sh diff:*)",

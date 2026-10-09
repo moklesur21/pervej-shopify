@@ -21,12 +21,14 @@ tools/shopify/theme.sh doctor            # every line [ok]; the first store comm
 | Build loop | `tools/shopify/theme.sh dev <id>` | `shopify theme dev` on your store: a private development theme with hot reload. |
 | After every stage | `tools/shopify/theme.sh check <id>` | Theme Check on the demo's theme. Zero errors. |
 | Stage 2a, 4a | `tools/shopify/theme.sh push <id> before` · `… push <id> after` | Pushes to the unpublished theme `<id> · <label>` (creates it the first time, updates it after) with `--strict --nodelete`. The theme ID and preview link go to `demos/<id>/media/themes.json` (git-ignored) for capture, QA and the handoff. |
+| Only when the demo needs it | `tools/shopify/theme.sh publish <id> <label>` | Makes `<id> · <label>` the live theme of **your dev store** (customer events, pixels and some extensions run only on the published theme). Records the theme that was live in `themes.json` first. `push` refuses a live theme: restore, push, publish again. |
+| Before `clean` | `tools/shopify/theme.sh restore <id>` | Republishes the theme that was live before `publish`. `clean` refuses while a demo theme is live. |
 | Any time | `tools/shopify/theme.sh preview <id> [label]` | Prints the recorded preview link(s). |
 | Any time | `tools/shopify/theme.sh list [<id>]` | The store's themes; the library is capped (20 on standard plans), so keep it clean. |
 | Cold read | `tools/shopify/theme.sh diff <id> [setup\|baseline] [--stat]` | `git diff` from the demo's `"<sNN>: setup"` commit (default) or `"<sNN>: baseline"` commit to `HEAD` — the review range without the untouched base theme. |
 | Stage 6 | `tools/shopify/theme.sh clean <id>` | Deletes this demo's unpublished themes from your store, after listing them and asking. Never the live or a development theme. |
 
-What it will not do: push to the live theme, publish a theme, or delete anything it did not name. There are no flags for those — they are house-rule bans (`docs/house-rules.md` §14), not options.
+What it will not do: push to the live theme, touch any store but `SHOPIFY_STORE`, or delete anything it did not name. Publishing exists only as `publish` / `restore` on your own dev store, so the store can always be put back (`docs/house-rules.md` §14); on a client store there is no such step.
 
 ## Conventions it relies on
 

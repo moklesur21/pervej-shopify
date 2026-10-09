@@ -171,3 +171,14 @@ test( 'review fixes: a ✓ in qa.md passes the Delivery row; a frame at a clip\'
 	const md = fs.readFileSync( path.join( demo.post, 'check.md' ), 'utf8' );
 	assert.match( md, /\| Delivery \| PASS \|/ );
 } );
+
+test( 'AI is named only when it is the brief\'s subject; Claude never; a named tool only if the brief names it', async () => {
+	const said = ( demo ) => checkWords( demo ).then( ( w ) => w.problems.join( '\n' ) );
+	const copy = ( line ) => FILES[ 'post/copy.md' ].replace( 'nothing else on the store looked wrong at all.', `nothing else on the store looked wrong at all. ${ line }` );
+	assert.match( await said( fixture( { 'post/copy.md': copy( 'The AI tools missed it.' ) } ) ), /"AI" \(AI\)/ );
+	const aiBrief = FILES[ 'brief.md' ] + 'The store was built with AI-written code.\n';
+	assert.doesNotMatch( await said( fixture( { 'brief.md': aiBrief, 'post/copy.md': copy( 'The AI tools missed it.' ) } ) ), /\(AI\)/ );
+	assert.match( await said( fixture( { 'brief.md': aiBrief, 'post/copy.md': copy( 'Claude missed it.' ) } ) ), /Claude or Anthropic/ );
+	assert.match( await said( fixture( { 'brief.md': aiBrief, 'post/copy.md': copy( 'ChatGPT missed it.' ) } ) ), /an AI tool the brief does not name/ );
+	assert.doesNotMatch( await said( fixture( { 'brief.md': aiBrief + 'Written with ChatGPT.\n', 'post/copy.md': copy( 'ChatGPT missed it.' ) } ) ), /AI tool/ );
+} );

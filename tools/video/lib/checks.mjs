@@ -51,12 +51,34 @@ const BANNED = [
 	[ /[$€£৳]\s?\d|\b\d+\s?(?:usd|dollars?|bdt|taka)\b|\bpric(?:e|es|ed|ing)\b|\bhourly\b|\bbudget\b/i, 'a price' ],
 	[ /\bfree\b/i, '"free"' ],
 	[ /\bterms\b|\bNDA\b|\blog-?ins?\b|\bpasswords?\b|\bcredentials?\b/i, 'terms, NDA or logins' ],
-	[ /\bAI\b|\bA\.I\./, 'AI' ],
-	[ /\b(?:claude|anthropic|chatgpt|openai|gpt-?\d\w*|copilot|gemini|llms?|artificial intelligence|machine learning)\b/i, 'an AI tool' ],
 	[ /\b\d+(?:\.\d+)?\s*(?:hours?|hrs?|minutes?|mins?)\b/i, 'effort totalled' ],
 	[ /\bexcited\b|\bi'?d love to\b|\bavailable for (?:work|hire)\b|\bhire me\b/i, 'not an expert\'s voice' ],
 	[ /\bhow to\b|\btips?\b|\blessons?\b/i, 'teaching' ],
 ];
+/** The tools behind our own work: never named, whatever the brief is about. */
+const OUR_TOOLS = [ /\b(?:claude|anthropic)\b/i, 'Claude or Anthropic' ];
+const AI_WORDS = [ /\bAI\b|\bA\.I\.|\bartificial intelligence\b|\bmachine learning\b|\bLLMs?\b/i, 'AI' ];
+const AI_TOOLS = /\b(?:chatgpt|openai|gpt-?\d\w*|copilot|gemini)\b/gi;
+
+/**
+ * The banned words for one demo (guideline §2). AI is named when it is the brief's own subject — an
+ * AI-assisted build to audit, an AI feature to build — and never otherwise; a named AI tool only when
+ * the brief names it. Claude and Anthropic never. That AI is never presented as how the work was done
+ * is a matter of meaning: the audit reads for it.
+ *
+ * @param {string} brief brief.md.
+ * @return {Array} [ pattern, why ] pairs.
+ */
+function bannedFor( brief ) {
+	const list = [ ...BANNED, OUR_TOOLS ];
+	if ( ! AI_WORDS[ 0 ].test( brief ) ) {
+		list.push( AI_WORDS );
+	}
+	const named = new Set( ( brief.match( AI_TOOLS ) || [] ).map( ( t ) => t.toLowerCase() ) );
+	list.push( [ { exec: ( text ) => [ ...String( text ).matchAll( AI_TOOLS ) ].find( ( m ) => ! named.has( m[ 0 ].toLowerCase() ) ) || null }, 'an AI tool the brief does not name' ] );
+	return list;
+}
+
 const COPY_ONLY = [
 	[ /(?:^|\s)#\w/m, 'a hashtag' ],
 	[ /(?:^|\s)@\w/m, 'a tag' ],
@@ -186,6 +208,7 @@ async function collect( demo, wordsOnly ) {
 	const imageWords = image ? imageText( image ) : [];
 	const insightPost = insight?.copy.post || '';
 	const insightLines = ( insight?.copy.lines || [] ).map( ( l ) => l.trim() );
+	const banned = bannedFor( file( 'brief.md' ) || '' );
 	const demoFiles = [ 'brief.md', 'spec.md', 'log.md', 'qa.md', 'handoff.md' ].map( ( name ) => file( name ) || '' ).join( '\n' );
 
 	const manifestText = readText( path.join( demo.work, 'manifest.json' ) );
@@ -439,20 +462,20 @@ async function collect( demo, wordsOnly ) {
 				}
 			}
 		};
-		texts.forEach( ( { scene, texts: list } ) => list.forEach( ( t ) => scan( `scene ${ scene.n }`, t, BANNED ) ) );
-		scan( 'copy', post, [ ...BANNED, ...COPY_ONLY ] );
-		copy.alternatives.forEach( ( a, i ) => scan( `alternative ${ i + 1 }`, a, BANNED ) );
-		pageTexts.forEach( ( { page, texts: list } ) => list.forEach( ( t ) => scan( `carousel page ${ page.n }`, t, BANNED ) ) );
+		texts.forEach( ( { scene, texts: list } ) => list.forEach( ( t ) => scan( `scene ${ scene.n }`, t, banned ) ) );
+		scan( 'copy', post, [ ...banned, ...COPY_ONLY ] );
+		copy.alternatives.forEach( ( a, i ) => scan( `alternative ${ i + 1 }`, a, banned ) );
+		pageTexts.forEach( ( { page, texts: list } ) => list.forEach( ( t ) => scan( `carousel page ${ page.n }`, t, banned ) ) );
 		if ( carousel ) {
-			scan( 'carousel copy', carouselPost, [ ...BANNED, ...COPY_ONLY ] );
-			scan( 'carousel title', carousel.title, BANNED );
-			carousel.copy.alternatives.forEach( ( a, i ) => scan( `carousel alternative ${ i + 1 }`, a, BANNED ) );
+			scan( 'carousel copy', carouselPost, [ ...banned, ...COPY_ONLY ] );
+			scan( 'carousel title', carousel.title, banned );
+			carousel.copy.alternatives.forEach( ( a, i ) => scan( `carousel alternative ${ i + 1 }`, a, banned ) );
 		}
 		if ( insight ) {
-			[ ...imageWords, image.sourceLine ].filter( Boolean ).forEach( ( t ) => scan( 'insight image', t, BANNED ) );
-			scan( 'insight copy', insightPost, [ ...BANNED, ...COPY_ONLY ] );
-			scan( 'insight alt text', insight.alt, BANNED );
-			insight.copy.alternatives.forEach( ( a, i ) => scan( `insight alternative ${ i + 1 }`, a, BANNED ) );
+			[ ...imageWords, image.sourceLine ].filter( Boolean ).forEach( ( t ) => scan( 'insight image', t, banned ) );
+			scan( 'insight copy', insightPost, [ ...banned, ...COPY_ONLY ] );
+			scan( 'insight alt text', insight.alt, banned );
+			insight.copy.alternatives.forEach( ( a, i ) => scan( `insight alternative ${ i + 1 }`, a, banned ) );
 		}
 		rows.push( row( 'Banned words', hits.length ? 'FAIL' : 'PASS', hits.length ? hits.join( '; ' ) : 'none of the §2 words in the video, the carousel or the insight post; no emoji, hashtags, tags or "swipe" in any copy' ) );
 	}

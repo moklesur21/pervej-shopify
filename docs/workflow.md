@@ -12,7 +12,7 @@ How two people (and Claude) work in one repo without ever conflicting. Short ver
 
 ## 2. IDs and names
 
-- ID = platform letter + running number + slug: `s01-cart-drawer-lag`. The same ID names the brief file, the branch, `demos/<id>/`, `shopify-dev/<id>/`, the themes on your store (`<id> · before`, `<id> · after`), the tag and the recordings folder on the drive. `sNN` is the short form in commit messages. Next number: look at `demos/_briefs/`, `demos/` and `git tag`. WooCommerce demos (`wNN`) live in `pervej-woo`.
+- ID = platform letter + running number + slug: `s01-cart-drawer-lag`. The same ID names the brief file, the branch, `demos/<id>/`, `shopify-dev/<id>/`, the themes on your store (`<id> · before`, `<id> · after`), the tag and the recordings folder on the drive. `sNN` is the short form in commit messages. The whole ID is what must be unique; the number alone may repeat (two queued briefs can both be `s01-…`) — then commit messages start with the full ID, and `theme.sh diff` finds either. Next number: look at `demos/_briefs/`, `demos/` and `git tag`. WooCommerce demos (`wNN`) live in `pervej-woo`.
 - Inside a theme there is no house prefix — the theme is the client's, white-label. Name our files for what they do (`sections/cart-drawer-progress.liquid`); the scope diff shows which files are ours.
 - Lanes rotate A → B → A → C (demo plan §3.2); the lane is in the brief.
 

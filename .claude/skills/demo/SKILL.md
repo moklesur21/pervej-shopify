@@ -12,7 +12,7 @@ Read before step 1, in this order: `CLAUDE.md` (the hard rules — all of them s
 
 ## Never, during the run
 
-- Never touch a live theme: no `--allow-live`, no `--publish`, no push but `theme.sh push <id> before|after` (always `--strict --nodelete`). Nothing is ever published.
+- Never touch a live store. On the person's own dev store, push only with `theme.sh push <id> before|after` (always `--strict --nodelete`, never `--allow-live`). If the demo needs a published theme — customer events, pixels and some extensions run only there — publish the demo's own theme with `theme.sh publish <id> after` (it records the theme that was live), record the decision, and `theme.sh restore <id>` before anything else touches that theme; `push` refuses a live theme, so a later change is restore → push → publish.
 - Never push to git, merge, rebase, or commit to `main` or any branch but the demo's. The run ends on the local demo branch; Yeasir or Asad pushes and opens the PR.
 - Never edit shared files on the demo branch: `CLAUDE.md`, `docs/`, `tools/`, `demos/_templates/`, `demos/_briefs/`, `.claude/`, `.gitignore`, `.mcp.json`. A needed shared change goes in the final message as a proposal.
 - Never type the storefront password or an admin sign-in, anywhere — in the built-in browser too. The toolkit reads the storefront password from `tools/shopify/.env.local`; the admin is a person's.
@@ -32,13 +32,13 @@ Inside the run, the demo's own state changes — `theme.sh new`, commits on the 
 Stop for one of these and nothing else:
 
 1. **A real ambiguity in the brief that changes what gets built** — a fork the brief, its mini approach and the client's done-list don't settle.
-2. **Something the run can't do on its own:** the Shopify CLI asks to log in, a store token or app credential is needed, a missing asset, a tool that won't install, `main` behind `origin/main`, a brief that needs a published theme or a live store (never done: propose the replacement instead) — and **the person's steps at QA** (step 7).
+2. **Something the run can't do on its own:** the Shopify CLI asks to log in, a store token or app credential is needed, a missing asset, a tool that won't install, `main` behind `origin/main`, a brief that needs a live store (never done: propose the replacement instead) — and **the person's steps at QA** (step 7).
 3. **An audit that still fails after two rounds of fixes** (step 11).
 4. **Marketplace material in the brief** — a job post, a feed, a poster's name, a marketplace link (`CLAUDE.md`): stop and say so; never use it.
 
 When you stop: first do everything that doesn't depend on the answer (the base theme, the setup and the before clips are always independent of a client question). Then ask **one** message: what you need, why, and what happens next. A question for the client goes to the project chat through Yeasir; when the answer comes back, append it to `brief.md` `## Q&A` with both times, commit `<sid>: client answer`, log `Questions answered`, amend `spec.md` if scope moved, and carry on.
 
-Everything else you **decide**: write the decision and its reason down — build decisions in `spec.md` `## Decisions made without asking`, post decisions in `post/check.md` `## Decisions` — list the ones the client should confirm in `handoff.md`, and move on. A brief step that waits on the client's approval — a plan approval, an acceptance — is not waited for (guideline §13): follow the brief's own done-list, write the decision down, log what actually happened. A brief line that breaks a house rule (publish a theme, a tunnel, edit Horizon's own files) loses to the house rule: record the replacement as a decision and flag it in the handoff. A brief that asks for a new build on Dawn: Horizon is the default (strategy v1.4) unless the brief says the client's store already runs Dawn — record which and why. Over the brief's hours: cut nothing; the real times show it and the handoff says so.
+Everything else you **decide**: write the decision and its reason down — build decisions in `spec.md` `## Decisions made without asking`, post decisions in `post/check.md` `## Decisions` — list the ones the client should confirm in `handoff.md`, and move on. A brief step that waits on the client's approval — a plan approval, an acceptance — is not waited for (guideline §13): follow the brief's own done-list, write the decision down, log what actually happened. A brief line that breaks a house rule (a live store, a tunnel, edit Horizon's own files) loses to the house rule: record the replacement as a decision and flag it in the handoff. A brief that asks for a new build on Dawn: Horizon is the default (strategy v1.4) unless the brief says the client's store already runs Dawn — record which and why. Over the brief's hours: cut nothing; the real times show it and the handoff says so. AI is named when it is the brief's own subject (an AI-assisted build to audit, an AI feature to build), never as how the work was done. A demo that also needs WooCommerce runs it on localhost (pervej-woo's run); a Shopify→Woo event is replayed or polled, never tunnelled.
 
 ## The clock
 
@@ -58,7 +58,7 @@ Write the output as is (`Fri 9 Oct 10:42`) into the event's row. A missed time c
 
 - `git fetch --quiet`, then `git status -sb`. On `main`, no changes to tracked files, `main` not behind `origin/main`. If branch `<id>` already exists, **resume** instead: `git switch <id>`, read `demos/<id>/log.md`, `spec.md`, `post/check.md` and `git log main..HEAD`, and continue from the first step not done. Never re-log an event that has a time.
 - `demos/_briefs/<id>.md` exists. `demos/_briefs/notes/` does not exist (if it does, stop: private files are in the working tree).
-- Read the brief once, whole. Scan it for marketplace names, links and poster names (stop reason 4). Note anything that is a stop reason 1 — but don't stop yet. Two queued briefs with the same ID: stop (reason 2) — the project chat renumbers one.
+- Read the brief once, whole. Scan it for marketplace names, links and poster names (stop reason 4). Note anything that is a stop reason 1 — but don't stop yet. The whole ID is unique, the number alone may not be: if another brief in `demos/_briefs/`, a folder in `demos/` or a tag uses the same number, `<sid>` below is the full ID (`theme.sh diff` finds either form).
 - `tools/shopify/theme.sh doctor` and `npm --prefix tools/video run doctor`: every line `[ok]` — the store answers, the storefront password is accepted, the CLI is logged in. A CLI that wants a login is stop reason 2, now. A missing ElevenLabs key becomes a stop at step 10, after everything that doesn't need it.
 
 ### 1. Branch, brief and base theme (off the clock)
@@ -193,7 +193,7 @@ Write the destination it prints (or "not set") on `log.md`'s Recordings line; co
 - the audit result, and the self-check line;
 - the decisions he should know about, most important first, and anything the client should confirm;
 - for the go (about five minutes): watch `<id>-linkedin.mp4` once at phone size muted and once with sound, flip through `<id>-carousel.pdf`, look at `<id>-insight.png`, read the three `-copy.txt` files — then "go" to the VA, or a note in plain words;
-- the next commands for the person, each in its own block: `git push -u origin <id>` and `gh pr create --fill` — the PR is reviewed line by line and merged by Yeasir, alongside the go; after the merge, `tools/shopify/theme.sh clean <id>` and the store-data undo in `setup/README.md`;
+- the next commands for the person, each in its own block: `git push -u origin <id>` and `gh pr create --fill` — the PR is reviewed line by line and merged by Yeasir, alongside the go; after the merge, `tools/shopify/theme.sh restore <id>` if the run published a theme, then `tools/shopify/theme.sh clean <id>` and the store-data undo in `setup/README.md`;
 - the time from `Brief received` to `Handoff written`, against the brief's hours.
 
 ## A note at the go

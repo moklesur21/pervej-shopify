@@ -144,7 +144,11 @@ git tag s03-click-to-order-journey && git push origin --tags
 git branch -d s03-click-to-order-journey && git push origin --delete s03-click-to-order-journey
 ```
 
-Whoever ran the demo cleans their store — the theme library is capped — and undoes any store data `setup/README.md` lists:
+Whoever ran the demo cleans their store — the theme library is capped — and undoes any store data `setup/README.md` lists. If the run published a demo theme (its last message says so), put the previous theme back first:
+
+```bash
+tools/shopify/theme.sh restore s03-click-to-order-journey
+```
 
 ```bash
 tools/shopify/theme.sh clean s03-click-to-order-journey

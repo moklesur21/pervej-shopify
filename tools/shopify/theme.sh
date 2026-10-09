@@ -2,8 +2,10 @@
 # tools/shopify/theme.sh — the demo theme loop on your own dev store (docs/demo-procedure.md).
 #
 # The store and every secret come from the environment or tools/shopify/.env.local (git-ignored),
-# never from a script. Nothing here can push to the live theme or publish one: there is no flag
-# for either (house rules §14). Pushes always run --strict (Theme Check must pass) and --nodelete.
+# never from a script. It works only on your own dev store (SHOPIFY_STORE): pushes go to unpublished
+# themes, always --strict (Theme Check must pass) and --nodelete, and never to the live theme. A demo
+# that needs a published theme publishes its own with `publish`, which records the theme that was live
+# so `restore` can put it back (house rules §14: dev stores only, never a live store).
 
 set -euo pipefail
 
@@ -20,6 +22,9 @@ Usage: tools/shopify/theme.sh <command> [args]
   push  <id> <label>               Push to the unpublished theme "<id> · <label>" (created the first
                                    time), always --strict --nodelete. Its ID and preview link go to
                                    demos/<id>/media/themes.json (git-ignored). Labels: before, after...
+  publish <id> <label>             Make "<id> · <label>" the live theme of your dev store, for a demo
+                                   that needs a published theme. Records the theme that was live first.
+  restore <id>                     Republish the theme that was live before publish.
   preview <id> [label]             Print the preview link(s) recorded by push.
   list  [<id>]                     Themes on your store (only this demo's when an ID is given).
   clean <id> [--yes]               Delete this demo's unpublished themes from your store (asks first).
@@ -183,7 +188,7 @@ cmd_push() {
 		if (hit.some((t) => t.role === "live")) return "LIVE";
 		return hit.length ? hit[0].id : "";
 	')
-	[[ $found != LIVE ]] || die "the live theme is named \"$name\" — refusing to push to it"
+	[[ $found != LIVE ]] || die "\"$name\" is live on $s — run: tools/shopify/theme.sh restore $id, push, then publish again"
 	if [[ -n $found ]]; then
 		out=$("$SHOPIFY_CLI" theme push --store "$s" --path "$dir" --theme "$found" --strict --nodelete --json)
 	else
@@ -216,10 +221,69 @@ cmd_preview() {
 	file="$ROOT/demos/$id/media/themes.json"
 	[[ -f $file ]] || die "nothing pushed for $id yet — tools/shopify/theme.sh push $id before"
 	LABEL="$label" json '
-		const rows = Object.entries(data || {}).filter(([k]) => !env.LABEL || k === env.LABEL);
+		const rows = Object.entries(data || {}).filter(([k]) => !k.startsWith("_") && (!env.LABEL || k === env.LABEL));
 		if (!rows.length) throw new Error("no theme with that label");
 		return rows.map(([k, v]) => `${k}\t${v.preview}`).join("\n") + "\n";
 	' <"$file"
+}
+
+cmd_publish() {
+	local id=${1:-} label=${2:-} s file target live
+	valid_id "$id"
+	[[ $label =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || die "publish needs a label: after, before..."
+	s=$(store)
+	file="$ROOT/demos/$id/media/themes.json"
+	[[ -f $file ]] || die "nothing pushed for $id yet — tools/shopify/theme.sh push $id $label"
+	target=$(LABEL="$label" STORE="$s" json '
+		const t = (data || {})[env.LABEL];
+		if (t && t.store !== env.STORE) throw new Error(`"${t.name}" was pushed to ${t.store}, not ${env.STORE}`);
+		return t ? t.id : "";
+	' <"$file")
+	[[ -n $target ]] || die "no \"$label\" theme recorded for $id — tools/shopify/theme.sh push $id $label"
+	live=$("$SHOPIFY_CLI" theme list --store "$s" --json | json '
+		const t = (data || []).find((x) => x.role === "live");
+		return t ? `${t.id}\t${t.name}` : "";
+	')
+	[[ -n $live ]] || die "could not read the live theme on $s"
+	if [[ ${live%%$'\t'*} == "$target" ]]; then
+		printf '"%s · %s" is already live on %s.\n' "$id" "$label" "$s"
+		return 0
+	fi
+	# The theme that was live before the demo's first publish, kept until restore.
+	FILE="$file" LIVE="$live" STORE="$s" json '
+		const fs = require("fs");
+		if (!data._restore) {
+			const [id, name] = env.LIVE.split("\t");
+			data._restore = { id: Number(id), name, store: env.STORE, at: new Date().toISOString() };
+			fs.writeFileSync(env.FILE, JSON.stringify(data, null, 2) + "\n");
+		}
+	' <"$file"
+	"$SHOPIFY_CLI" theme publish --store "$s" --theme "$target" --force
+	printf 'Published "%s · %s" (#%s) on %s. Put the store back with: tools/shopify/theme.sh restore %s\n' "$id" "$label" "$target" "$s" "$id"
+}
+
+cmd_restore() {
+	local id=${1:-} s file prev
+	valid_id "$id"
+	s=$(store)
+	file="$ROOT/demos/$id/media/themes.json"
+	[[ -f $file ]] || die "nothing recorded for $id"
+	prev=$(STORE="$s" json '
+		const r = (data || {})._restore;
+		if (r && r.store !== env.STORE) throw new Error(`the theme to restore is on ${r.store}, not ${env.STORE}`);
+		return r ? r.id : "";
+	' <"$file")
+	if [[ -z $prev ]]; then
+		printf 'Nothing to restore: no theme of %s was published on %s.\n' "$id" "$s"
+		return 0
+	fi
+	"$SHOPIFY_CLI" theme publish --store "$s" --theme "$prev" --force
+	FILE="$file" json '
+		const fs = require("fs");
+		delete data._restore;
+		fs.writeFileSync(env.FILE, JSON.stringify(data, null, 2) + "\n");
+	' <"$file"
+	printf 'Republished #%s on %s; the demo'"'"'s themes are unpublished again.\n' "$prev" "$s"
 }
 
 cmd_list() {
@@ -238,10 +302,12 @@ cmd_clean() {
 	valid_id "$id"
 	s=$(store)
 	rows=$("$SHOPIFY_CLI" theme list --store "$s" --name "$id" --json | PREFIX="$id · " json '
-		return (data || [])
-			.filter((t) => t.role === "unpublished" && t.name.startsWith(env.PREFIX))
-			.map((t) => `${t.id}\t${t.name}`).join("\n");
+		const mine = (data || []).filter((t) => t.name.startsWith(env.PREFIX));
+		const live = mine.find((t) => t.role === "live");
+		if (live) return `LIVE\t${live.name}`;
+		return mine.filter((t) => t.role === "unpublished").map((t) => `${t.id}\t${t.name}`).join("\n");
 	')
+	[[ $rows != LIVE$'\t'* ]] || die "\"${rows#*$'\t'}\" is live on $s — run tools/shopify/theme.sh restore $id first"
 	if [[ -z $rows ]]; then
 		printf 'No unpublished themes named "%s · ..." on %s.\n' "$id" "$s"
 		return 0
@@ -258,6 +324,19 @@ cmd_clean() {
 	rm -f "$ROOT/demos/$id/media/themes.json"
 }
 
+# The demo's "<sNN>: <which>" commit — or "<id>: <which>" when the number is shared with another demo.
+# The branch's own commits first, so an older demo with the same number is never picked up.
+demo_commit() {
+	local id=$1 which=$2 short=${1%%-*} range sha
+	for range in "main..HEAD" "HEAD"; do
+		sha=$(git -C "$ROOT" log -1 --format=%H -E --grep="^($short|$id): $which" "$range" 2>/dev/null || true)
+		if [[ -n $sha ]]; then
+			printf '%s' "$sha"
+			return 0
+		fi
+	done
+}
+
 cmd_diff() {
 	local id=${1:-} which=setup short sha
 	valid_id "$id"
@@ -267,12 +346,12 @@ cmd_diff() {
 		shift
 	fi
 	short=${id%%-*}
-	sha=$(git -C "$ROOT" log -1 --format=%H --grep="^$short: $which")
+	sha=$(demo_commit "$id" "$which")
 	if [[ -z $sha && $which == setup ]]; then
-		sha=$(git -C "$ROOT" log -1 --format=%H --grep="^$short: baseline")
+		sha=$(demo_commit "$id" baseline)
 		[[ -z $sha ]] || printf 'No "%s: setup" commit (nothing planted); diffing from the baseline.\n' "$short" >&2
 	fi
-	[[ -n $sha ]] || die "no commit on this branch whose message starts \"$short: $which\""
+	[[ -n $sha ]] || die "no commit on this branch whose message starts \"$short: $which\" (or \"$id: $which\")"
 	exec git -C "$ROOT" diff "$sha"..HEAD "$@"
 }
 
@@ -294,6 +373,8 @@ case $command in
 		exec "$SHOPIFY_CLI" theme check --path "$dir" "$@"
 		;;
 	push) cmd_push "$@" ;;
+	publish) cmd_publish "$@" ;;
+	restore) cmd_restore "$@" ;;
 	preview) cmd_preview "$@" ;;
 	list) cmd_list "$@" ;;
 	clean) cmd_clean "$@" ;;
