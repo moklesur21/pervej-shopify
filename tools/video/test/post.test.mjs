@@ -6,7 +6,7 @@
  *   npm --prefix tools/video test
  */
 
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -77,8 +77,13 @@ function git( cwd, ...args ) {
 	assert.equal( r.status, 0, r.stderr );
 }
 
+const made = [];
+after( () => made.forEach( ( dir ) => fs.rmSync( dir, { recursive: true, force: true } ) ) );
+
 function fixture( change = {} ) {
-	const dir = path.join( fs.mkdtempSync( path.join( os.tmpdir(), 'pervej-post-' ) ), 'zz-post-test' );
+	const root = fs.mkdtempSync( path.join( os.tmpdir(), 'pervej-post-' ) );
+	made.push( root );
+	const dir = path.join( root, 'zz-post-test' );
 	for ( const [ name, text ] of Object.entries( { ...FILES, ...change } ) ) {
 		fs.mkdirSync( path.dirname( path.join( dir, name ) ), { recursive: true } );
 		fs.writeFileSync( path.join( dir, name ), text );
