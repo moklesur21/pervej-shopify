@@ -2,7 +2,7 @@
  * The voice as the render and the check see it (guideline §10): one chunk per scene with Spoken
  * words, the takes made for it, and the processed WAVs in media/voice/. Everything is recorded in
  * media/voice/takes.json — seeds, request ids, the word check of every take, the pick, and the
- * loudness chain — so the render can prove it plays the approved words.
+ * loudness chain — so the render can prove it plays the checked words.
  */
 
 import fs from 'node:fs';

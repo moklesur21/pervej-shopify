@@ -143,6 +143,17 @@ if ( depsOk ) {
 			}
 			return 'regular and semibold load from slides/fonts/';
 		} );
+		await check( 'PDF printing (the carousel)', async () => {
+			const page = await browser.newPage();
+			await page.setContent( '<p>One</p><p style="break-before:page">Two</p>' );
+			const pdf = await page.pdf( { width: '1080px', height: '1080px', printBackground: true } );
+			await page.close();
+			const pages = ( pdf.toString( 'latin1' ).match( /\/Type\s*\/Page(?![a-z])/g ) || [] ).length;
+			if ( pdf.subarray( 0, 5 ).toString() !== '%PDF-' || pages !== 2 ) {
+				throw new Error( `a two-page test printed ${ pages } page(s)` );
+			}
+			return 'square pages print to one PDF';
+		} );
 		await browser.close();
 	}
 	await check( 'Lighthouse', async () => {

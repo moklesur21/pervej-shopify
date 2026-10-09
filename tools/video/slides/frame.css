@@ -78,6 +78,15 @@ body {
 	white-space: nowrap;
 }
 
+/* A carousel page's counter ("3/9"), at label size, at the right of the strip (§7a). */
+.strip .counter {
+	position: absolute;
+	right: 40px;
+	font-size: 30px;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
 /* Middle: footage or slide. */
 .middle {
 	position: absolute;
@@ -263,7 +272,16 @@ body {
 	line-height: 1.25;
 }
 
-/* Contact sheet: a frame per second, for the scan before Approval 2. Never part of the video. */
+/* The carousel's last page: what I'd flag to the client, above the name (§7a). */
+.endcard .lead {
+	max-width: 900px;
+	margin-bottom: 28px;
+	font-size: var(--size, 44px);
+	font-weight: 600;
+	line-height: 1.25;
+}
+
+/* Contact sheet: a frame per second (or every carousel page), for the audit and the go. Never part of a post. */
 .sheet {
 	padding: 24px;
 	background: var(--white);
@@ -288,4 +306,112 @@ body {
 .sheet figcaption {
 	margin-top: 4px;
 	font-size: 18px;
+}
+
+/*
+ * The insight image (§7b): a 1200 square — strip 96 · middle 816 · band 288, so a 2× still (1080 × 810)
+ * fits without scaling. Label ≥ 34 px · line ≥ 60 px · number ≥ 160 px · source ≥ 34 px.
+ * frame.js sizes the page to 1200 for it; the strip is left out when the number is not from the demo.
+ */
+.insight .i-strip {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 1200px;
+	height: 96px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 40px;
+	background: var(--navy);
+	color: var(--white);
+}
+
+.insight .i-strip p {
+	font-size: 34px;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.insight .i-middle {
+	position: absolute;
+	top: 96px;
+	left: 0;
+	width: 1200px;
+	height: 816px;
+	overflow: hidden;
+	background: var(--grey);
+}
+
+.insight.is-unlabelled .i-middle {
+	top: 0;
+}
+
+.insight .i-band {
+	position: absolute;
+	top: 912px;
+	left: 0;
+	width: 1200px;
+	height: 288px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 36px 72px;
+	background: var(--navy);
+	color: var(--white);
+	overflow: hidden;
+}
+
+.insight .i-line {
+	font-size: var(--size, 64px);
+	font-weight: 600;
+	line-height: 1.2;
+	text-align: center;
+}
+
+.insight--number .i-middle {
+	height: 1104px;
+	display: flex;
+	flex-direction: column;
+	padding: 72px 96px 56px;
+}
+
+.insight--number.is-unlabelled .i-middle {
+	height: 1200px;
+}
+
+.insight .i-stack {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 40px;
+	overflow: hidden;
+}
+
+.insight .i-number {
+	font-size: 240px;
+	font-weight: 600;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.insight--number .i-line {
+	text-align: left;
+}
+
+.insight .i-number::after {
+	content: "";
+	display: block;
+	width: 160px;
+	height: 10px;
+	margin-top: 36px;
+	border-radius: 5px;
+	background: var(--teal);
+}
+
+.insight .i-source {
+	font-size: 34px;
+	line-height: 1.25;
 }

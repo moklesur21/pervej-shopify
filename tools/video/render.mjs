@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * Renders the approved script into the LinkedIn video and everything the VA needs (guideline §6, §11).
+ * Renders the checked script into the LinkedIn video and everything the VA needs (guideline §6, §11).
  *
  *   node tools/video/render.mjs <id>
  *
- * Refuses unless post/check.md carries a committed "Approved 1" line and script.md / copy.md are
- * unchanged since — and, when the script has Spoken words, unless voice.mjs has made the voice from
- * those approved words. Writes media/final/: <id>-linkedin.mp4 · -cover.png · -contact-N.png ·
- * -timeline.png · -copy.txt; a manifest and the drawn frames in media/render/. Then runs the check.
+ * Refuses until the words check passes and the four post files are committed as they stand — and,
+ * when the script has Spoken words, until voice.mjs has made the voice from those words. Writes
+ * media/final/: <id>-linkedin.mp4 · -cover.png · -contact-N.png · -timeline.png · -copy.txt; a manifest
+ * and the drawn frames in media/render/. Then runs the check. The carousel and the insight image are
+ * carousel.mjs and insight.mjs.
  *
  * Sound (§6, §10): the voice, each scene's at its start; one music bed ducked under it; a soft click
  * on every click the capture logged and quiet typing under every typed stretch, moved with the clip's
@@ -19,7 +20,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { resolveDemo, ensureDir, shown, toolVersion } from './lib/paths.mjs';
 import { loadPackage } from './lib/package.mjs';
-import { approval } from './lib/approvals.mjs';
+import { wordsGate } from './lib/gate.mjs';
 import { openFrames, pngSize, fileUrl } from './lib/slides.mjs';
 import { ffmpeg, FROM_YUV, TO_YUV, x264 } from './lib/ffmpeg.mjs';
 import { CANVAS, FPS, MIDDLE, PALETTE, VOICE } from './lib/layout.mjs';
@@ -95,15 +96,15 @@ async function main() {
 	if ( pkg.errors.length ) {
 		throw new Error( `Not rendered — fix the script first:\n- ${ pkg.errors.join( '\n- ' ) }` );
 	}
-	const gate = approval( demo );
+	const gate = await wordsGate( demo );
 	if ( ! gate.ok ) {
 		throw new Error( `Not rendered — ${ gate.reason }` );
 	}
 	if ( pkg.voice.chunks.length && ! pkg.voiced ) {
-		throw new Error( `Not rendered — the voice does not match the approved script yet (node tools/video/voice.mjs ${ demo.id }):\n- ${ pkg.voice.problems.join( '\n- ' ) }` );
+		throw new Error( `Not rendered — the voice does not match the checked script yet (node tools/video/voice.mjs ${ demo.id }):\n- ${ pkg.voice.problems.join( '\n- ' ) }` );
 	}
 	const { steps, total } = pkg.plan;
-	console.log( `Render ${ demo.id } · script ${ pkg.scriptSha } (approved in ${ gate.commit }) · ${ steps.length } shots · ${ total.toFixed( 1 ) } s · ${ pkg.voiced ? `voice in ${ pkg.voice.map.size } scene(s)` : 'silent' }` );
+	console.log( `Render ${ demo.id } · script ${ pkg.scriptSha } (words ${ gate.commit }) · ${ steps.length } shots · ${ total.toFixed( 1 ) } s · ${ pkg.voiced ? `voice in ${ pkg.voice.map.size } scene(s)` : 'silent' }` );
 	for ( const note of pkg.plan.notes ) {
 		console.log( `  note: ${ note }` );
 	}
@@ -233,7 +234,7 @@ async function main() {
 		fs.renameSync( path.join( demo.work, 'linkedin.mp4' ), out.mp4 );
 		fs.rmSync( path.join( demo.work, 'picture.mp4' ), { force: true } );
 
-		// 4. The timeline scene as a still (the alternative Thursday post), and the copy as plain text.
+		// 4. The timeline scene as a still (the carousel's timeline page can use it), and the copy as plain text.
 		const timelineSteps = steps.filter( ( s ) => s.layout === 'timeline' );
 		const fullTimeline = timelineSteps.find( ( s ) => s.shown === s.rows.length );
 		if ( fullTimeline ) {
@@ -243,7 +244,7 @@ async function main() {
 		}
 		fs.writeFileSync( out.copy, pkg.copy.post + '\n' );
 
-		// 5. Contact sheets: a frame every second, for the scan before Approval 2.
+		// 5. Contact sheets: a frame every second, for the audit and the go.
 		const hash = crypto.createHash( 'sha1' ).update( fs.readFileSync( out.mp4 ) ).digest( 'hex' ).slice( 0, 7 );
 		const sheetDir = ensureDir( path.join( demo.work, 'sheet' ) );
 		await ffmpeg( [ '-i', out.mp4, '-vf', `select=not(mod(n\\,${ FPS })),scale=${ FROM_YUV }`, '-fps_mode', 'vfr', '-q:v', '3', path.join( sheetDir, 'f%03d.jpg' ) ] );
@@ -268,7 +269,7 @@ async function main() {
 			tool: toolVersion(),
 			renderedAt: new Date().toISOString(),
 			script: pkg.scriptSha,
-			approval: gate.commit,
+			words: gate.commit,
 			render: hash,
 			seconds: total,
 			files: {

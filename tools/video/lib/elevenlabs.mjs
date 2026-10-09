@@ -228,7 +228,7 @@ const same = ( a, b ) => a === b || ( Math.min( a.length, b.length ) >= 4 && 1 -
  * Word accuracy of a transcript against the script, and the differences. A word joined or split
  * by the transcriber ("set up" / "setup") costs nothing.
  *
- * @param {string} refText The approved words.
+ * @param {string} refText The checked words.
  * @param {string} hypText The transcript.
  * @return {{accuracy: number, diff: string[]}} Result.
  */
@@ -290,7 +290,7 @@ export function compare( refText, hypText ) {
  *
  * @param {object} transcript Speech-to-text result.
  * @param {number} seconds    Length of the take.
- * @param {string} refText    The approved words.
+ * @param {string} refText    The checked words.
  * @return {{accuracy: number, diff: string[], flags: string[], words: Array}} Verdict.
  */
 export function judge( transcript, seconds, refText ) {
@@ -312,7 +312,7 @@ export function judge( transcript, seconds, refText ) {
 	return { accuracy, diff, flags, words: spoken.map( ( x ) => [ x.text, r3( x.start ), r3( x.end ) ] ) };
 }
 
-/** A take fails the check when a word is wrong or the ending is clipped; tone is judged at Approval 2. */
+/** A take fails the check when a word is wrong or the ending is clipped; tone is judged at the go. */
 export const failed = ( take ) => take.accuracy < config.min_accuracy || take.flags.includes( 'last word may be clipped' );
 
 /** Deterministic seed for a take, so any take can be made again. */

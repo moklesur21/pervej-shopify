@@ -1,7 +1,8 @@
 /**
- * Reads `post/script.md` and `post/copy.md` (video guideline §5, §7) and turns the approved script
- * into timed shots. The render and the self-check both use this, so what was approved is what is
- * rendered and what is checked.
+ * Reads `post/script.md` and `post/copy.md` (video guideline §5, §7) and turns the checked script
+ * into timed shots; reads `post/carousel.md` (§7a) and `post/insight.md` (§7b) for the other two
+ * posts. The render, the carousel and image commands and the self-check all use this, so what was
+ * checked is what is rendered.
  *
  * script.md is the guideline's one table — # | Sec | On screen | Line in the bottom band | Spoken | Source.
  * Spoken is what the voice says over the scene (§10); a scene may leave it empty. The "On screen"
@@ -95,7 +96,7 @@ export function plain( text ) {
 	return String( text || '' ).replace( /[*_`]/g, '' ).replace( /^["“]|["”]$/g, '' ).replace( /\s+/g, ' ' ).trim();
 }
 
-function parseSources( cell, errors, n ) {
+function parseSources( cell, errors, n, what = 'Scene' ) {
 	const files = new Set();
 	for ( const raw of cell.split( /[·,;&+]|\band\b/ ) ) {
 		const item = raw.replace( /`/g, '' ).trim().toLowerCase();
@@ -110,15 +111,18 @@ function parseSources( cell, errors, n ) {
 		if ( key ) {
 			files.add( SOURCES[ key ] );
 		} else {
-			errors.push( `Scene ${ n }: source "${ raw.trim() }" is not a demo file (brief, plan, log, qa, handoff or a file name).` );
+			errors.push( `${ what } ${ n }: source "${ raw.trim() }" is not a demo file (brief, plan, log, qa, handoff or a file name).` );
 		}
 	}
 	return [ ...files ];
 }
 
+/** One italic run: *text*, never **bold**. */
+const ITALIC = /(?<![*\w])\*(?!\*)([^*]+?)\*(?!\*)/g;
+
 function parseShots( cell, errors, n ) {
 	const italics = [];
-	const masked = cell.replace( /(?<![*\w])\*(?!\*)([^*]+?)\*(?!\*)/g, ( m, inner ) => {
+	const masked = cell.replace( ITALIC, ( m, inner ) => {
 		italics.push( inner.trim() );
 		return `\u0001${ italics.length - 1 }\u0002`;
 	} );
@@ -249,25 +253,239 @@ export function parseScript( md ) {
 }
 
 /**
- * Parse post/copy.md: the post in a fenced block under "## Post", then "## Alternative first lines".
+ * The text under a "## Heading", up to the next "## " heading.
  *
- * @param {string} md Markdown.
+ * @param {string} md      Markdown (LF line endings).
+ * @param {RegExp} heading The heading's words, e.g. /Alt text/.
+ * @return {string|null} Section body, or null when the heading is missing.
+ */
+export function section( md, heading ) {
+	const at = new RegExp( `^##\\s+${ heading.source }\\s*$`, 'im' ).exec( md );
+	if ( ! at ) {
+		return null;
+	}
+	const rest = md.slice( at.index + at[ 0 ].length );
+	const next = /^##\s/m.exec( rest );
+	return next ? rest.slice( 0, next.index ) : rest;
+}
+
+/**
+ * Parse a post's copy: the post in a fenced block under "## Post", then "## Alternative first lines".
+ * post/copy.md holds only this; carousel.md and insight.md hold it beside their pages or image.
+ *
+ * @param {string} md   Markdown.
+ * @param {string} name File name for messages.
  * @return {{post: string|null, lines: string[], alternatives: string[], errors: string[]}} Copy.
  */
-export function parseCopy( md ) {
+export function parseCopy( md, name = 'post/copy.md' ) {
 	const text = md.replace( /\r/g, '' );
 	const heading = /^##\s+Post\s*$/im.exec( text );
 	const fence = heading ? /^```[^\n]*\n([\s\S]*?)\n```/m.exec( text.slice( heading.index ) ) : null;
 	if ( ! fence ) {
-		return { post: null, lines: [], alternatives: [], errors: [ 'post/copy.md: put the post in a ``` fenced block under "## Post".' ] };
+		return { post: null, lines: [], alternatives: [], errors: [ `${ name }: put the post in a \`\`\` fenced block under "## Post".` ] };
 	}
 	const post = fence[ 1 ].replace( /\s+$/, '' );
-	const alt = /^##\s+Alternative first lines\s*$/im.exec( text );
-	const alternatives = alt
-		? text.slice( alt.index + alt[ 0 ].length ).split( '\n' ).map( ( l ) => /^\s*(?:[-*]|\d+[.)])\s+(.+)$/.exec( l ) ).filter( Boolean ).map( ( m ) => plain( m[ 1 ] ) )
-		: [];
+	const alt = section( text, /Alternative first lines/ );
+	const alternatives = alt === null
+		? []
+		: alt.split( '\n' ).map( ( l ) => /^\s*(?:[-*]|\d+[.)])\s+(.+)$/.exec( l ) ).filter( Boolean ).map( ( m ) => plain( m[ 1 ] ) );
 	return { post, lines: post.split( '\n' ), alternatives, errors: [] };
 }
+
+const NAME_RE = '`?([a-z0-9]+(?:-[a-z0-9]+)*)`?';
+
+/** LF line endings, and <!-- notes --> left out: a template's commented-out alternative is never read. */
+const notes = ( md ) => md.replace( /\r/g, '' ).replace( /<!--[\s\S]*?-->/g, '' );
+
+/**
+ * A picture from the capture: "Still <name>" (media/raw/<id>-<name>.png, as cap.still and wide
+ * stills name them) or "Clip <name> at N s" (one frame of that clip). Before/After comes from the name.
+ *
+ * @param {string} text Cell text.
+ * @return {object|null} { kind: 'still'|'frame', name, at, phase } or null.
+ */
+function picture( text ) {
+	let m = new RegExp( `^\\s*clip\\s+${ NAME_RE }\\s+at\\s+(\\d+(?:\\.\\d+)?)\\s*s\\s*$`, 'i' ).exec( text );
+	if ( m ) {
+		return { kind: 'frame', name: m[ 1 ].toLowerCase(), at: Number( m[ 2 ] ), phase: m[ 1 ].toLowerCase().split( '-' )[ 0 ] };
+	}
+	m = new RegExp( `^\\s*still\\s+${ NAME_RE }\\s*$`, 'i' ).exec( text );
+	if ( m ) {
+		return { kind: 'still', name: m[ 1 ].toLowerCase(), phase: m[ 1 ].toLowerCase().split( '-' )[ 0 ] };
+	}
+	return null;
+}
+
+/**
+ * One carousel page's middle (§7a): a picture, a slide (every row shown), or the end card with an
+ * optional lead above the name — the flag, on the last page.
+ *
+ *   Still <name> · Clip <name> at N s · Slide: *row* · Questions: *Q — A* · Checklist: *…* · Timeline: *…* · End card[: *lead*]
+ */
+function parsePage( cell, errors, n ) {
+	const rows = [ ...cell.matchAll( ITALIC ) ].map( ( m ) => m[ 1 ].trim() );
+	const bare = cell.replace( ITALIC, '' ).trim();
+	const pic = picture( cell );
+	if ( pic ) {
+		return pic;
+	}
+	let m = /^(slide|questions|checklist|timeline)\s*:?/i.exec( bare );
+	if ( m ) {
+		const kind = m[ 1 ].toLowerCase();
+		if ( ! rows.length ) {
+			errors.push( `Page ${ n }: slide text goes in *italics*, one italic run per row.` );
+		}
+		if ( /[\p{L}\p{N}]/u.test( bare.slice( m[ 0 ].length ) ) ) {
+			errors.push( `Page ${ n }: "${ bare.slice( m[ 0 ].length ).trim() }" sits outside the italics of a ${ kind }.` );
+		}
+		return { kind: 'slide', layout: kind === 'slide' ? ( rows.length === 1 ? 'statement' : 'rows' ) : kind, rows };
+	}
+	m = /^end card\s*:?/i.exec( bare );
+	if ( m ) {
+		return { kind: 'endcard', lead: rows.join( ' ' ) || null };
+	}
+	errors.push( `Page ${ n }: "${ plain( cell ).slice( 0, 70 ) }" is not a page — start with Still, Clip … at N s, Slide:, Questions:, Checklist:, Timeline: or End card.` );
+	return null;
+}
+
+/**
+ * Parse post/carousel.md (§7a): the pages table — # | Middle | Band | Source — then the copy
+ * (## Post, ## Alternative first lines) and ## Document title.
+ *
+ * @param {string} md Markdown.
+ * @return {{pages: object[], copy: object, title: string, errors: string[]}} Carousel.
+ */
+export function parseCarousel( md ) {
+	const text = notes( md );
+	const errors = [];
+	const table = tables( text ).find( ( t ) => t.header.some( ( h ) => /^middle$/i.test( h.trim() ) ) );
+	const pages = [];
+	if ( ! table ) {
+		errors.push( 'post/carousel.md has no pages table with a "Middle" column (# | Middle | Band | Source).' );
+	} else {
+		const col = ( re ) => table.header.findIndex( ( h ) => re.test( h.trim() ) );
+		const c = { n: col( /^(#|page|no\.?)$/i ), middle: col( /^middle$/i ), band: col( /^(band|line)/i ), source: col( /^source/i ) };
+		if ( c.band < 0 || c.source < 0 ) {
+			errors.push( 'post/carousel.md: the pages table needs "Band" and "Source" columns.' );
+		} else {
+			for ( const r of table.rows ) {
+				if ( r.every( ( x ) => ! x ) ) {
+					continue;
+				}
+				const n = Number( plain( r[ c.n ] ) ) || pages.length + 1;
+				const page = { n, middle: parsePage( r[ c.middle ] || '', errors, n ), line: plain( r[ c.band ] ), sources: parseSources( r[ c.source ] || '', errors, n, 'Page' ) };
+				if ( ! page.line ) {
+					errors.push( `Page ${ n }: no line for the bottom band.` );
+				}
+				pages.push( page );
+			}
+		}
+	}
+	const copy = parseCopy( text, 'post/carousel.md' );
+	errors.push( ...copy.errors );
+	const titleSection = section( text, /Document title/ );
+	const title = titleSection === null ? '' : plain( titleSection.split( '\n' ).find( ( l ) => l.trim() ) || '' );
+	return { pages, copy, title, errors };
+}
+
+/**
+ * The words a carousel page puts on screen: its line and its middle.
+ *
+ * @param {object} page  Page.
+ * @param {object} brand brand.json.
+ * @return {string[]} Texts.
+ */
+export function pageText( page, brand ) {
+	const out = [ page.line ];
+	const m = page.middle;
+	if ( m?.kind === 'slide' ) {
+		out.push( ...m.rows );
+	} else if ( m?.kind === 'endcard' ) {
+		if ( m.lead ) {
+			out.push( m.lead );
+		}
+		out.push( brand.endCard.name, brand.endCard.title );
+		if ( brand.endCard.url ) {
+			out.push( brand.endCard.url );
+		}
+	}
+	return out;
+}
+
+/**
+ * Parse post/insight.md (§7b):
+ *
+ *   ## Image        Key: value lines — Layout: still|number · Still: <name> | Clip <name> at N s ·
+ *                   Number: <the number as shown> · Line: <the insight line> · Source line: <small print> ·
+ *                   Source: <demo files, as in script.md>
+ *   ## Post  ## Alternative first lines  ## Alt text
+ *   ## Outside figure   optional table — | Source | URL | Sentence | Checked | — at most one row
+ *
+ * @param {string} md Markdown.
+ * @return {{image: object, copy: object, alt: string, outside: object[], errors: string[]}} Insight.
+ */
+export function parseInsight( md ) {
+	const text = notes( md );
+	const errors = [];
+	const fields = {};
+	for ( const l of ( section( text, /Image/ ) || '' ).split( '\n' ) ) {
+		const m = /^\s*(?:[-*]\s*)?([A-Za-z][A-Za-z ]*?)\s*:\s*(.+)$/.exec( l );
+		if ( m ) {
+			fields[ m[ 1 ].toLowerCase() ] = m[ 2 ].trim();
+		}
+	}
+	if ( section( text, /Image/ ) === null ) {
+		errors.push( 'post/insight.md has no "## Image" section.' );
+	}
+	const layout = ( fields.layout || '' ).toLowerCase().replace( /[^a-z]/g, '' );
+	const image = {
+		layout,
+		picture: fields.still ? picture( /^clip\b/i.test( fields.still ) ? fields.still : `Still ${ fields.still }` ) : null,
+		number: plain( fields.number || '' ),
+		line: plain( fields.line || '' ),
+		sourceLine: plain( fields[ 'source line' ] || '' ),
+		sources: parseSources( fields.source || '', errors, 1, 'Image' ),
+	};
+	if ( ! [ 'still', 'number' ].includes( layout ) ) {
+		errors.push( 'post/insight.md: "Layout:" is still or number (§7b).' );
+	}
+	if ( layout === 'still' && ! image.picture ) {
+		errors.push( 'post/insight.md: a still layout needs "Still: <name>" or "Still: Clip <name> at N s".' );
+	}
+	if ( layout === 'number' && ( ! image.number || ! image.sourceLine ) ) {
+		errors.push( 'post/insight.md: a number layout needs "Number:" and "Source line:".' );
+	}
+	if ( ! image.line ) {
+		errors.push( 'post/insight.md: the image needs its "Line:".' );
+	}
+	if ( ! fields.source ) {
+		errors.push( 'post/insight.md: name the image\'s "Source:" (the demo files its number and line come from).' );
+	}
+	const copy = parseCopy( text, 'post/insight.md' );
+	errors.push( ...copy.errors );
+	const alt = plain( ( section( text, /Alt text/ ) || '' ).trim().split( /\n\s*\n/ )[ 0 ] || '' );
+	const outsideTable = section( text, /Outside figure/ );
+	const outside = [];
+	if ( outsideTable !== null ) {
+		const t = tables( outsideTable )[ 0 ];
+		if ( t ) {
+			const col = ( re ) => t.header.findIndex( ( h ) => re.test( h.trim() ) );
+			const c = { source: col( /^source/i ), url: col( /^url/i ), sentence: col( /^sentence/i ), checked: col( /^checked/i ) };
+			for ( const r of t.rows.filter( ( x ) => x.some( Boolean ) ) ) {
+				outside.push( { source: plain( r[ c.source ] ), url: plain( r[ c.url ] ), sentence: plain( r[ c.sentence ] ), checked: plain( r[ c.checked ] ) } );
+			}
+		}
+	}
+	return { image, copy, alt, outside, errors };
+}
+
+/**
+ * The words on the insight image, not counting the label and the source line (§7b).
+ *
+ * @param {object} image Parsed image.
+ * @return {string[]} Texts.
+ */
+export const imageText = ( image ) => [ image.layout === 'number' ? image.number : '', image.line ].filter( Boolean );
 
 /**
  * Every piece of text the viewer reads, by scene: the line, slide rows, end card.

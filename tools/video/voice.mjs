@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The voice (video guideline §10): the approved Spoken column of post/script.md, read by Yeasir's own
+ * The voice (video guideline §10): the checked Spoken column of post/script.md, read by Yeasir's own
  * ElevenLabs voice clone, checked word for word, at one loudness.
  *
  *   node tools/video/voice.mjs <id> --dry          the chunks and the characters a run would send; no API call
@@ -9,18 +9,18 @@
  *   node tools/video/voice.mjs <id> --pick s3=t1   use another stored take (no API call)
  *   node tools/video/voice.mjs <id> --process      only the loudness chain again
  *
- * Refuses unless Approval 1 is committed and the words are unchanged since: the voice reads what was
- * approved, nothing else. One take per scene, each with a fixed seed and joined to the previous scene's
- * take (request stitching) so the read flows; a take that fails the word check (a word missing, added or
- * changed, or a clipped ending) gets up to two more. Tone is never retried by machine: it is judged at
- * Approval 2. Then one loudness chain over the whole voice → media/voice/<id>-voice-s<N>.wav.
+ * Refuses until the words check passes and the four post files are committed as they stand (§8): the
+ * voice reads what was checked, nothing else. One take per scene, each with a fixed seed and joined to the
+ * previous scene's take (request stitching) so the read flows; a take that fails the word check (a word
+ * missing, added or changed, or a clipped ending) gets up to two more. Tone is never retried by machine:
+ * Yeasir judges it at the go. Then one loudness chain over the whole voice → media/voice/<id>-voice-s<N>.wav.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveDemo, ensureDir, shown, readText } from './lib/paths.mjs';
 import { parseScript } from './lib/script.mjs';
-import { approval } from './lib/approvals.mjs';
+import { wordsGate } from './lib/gate.mjs';
 import { duration } from './lib/ffmpeg.mjs';
 import { config, tts, stt, judge, failed, seedOf, keySource, keyHelp } from './lib/elevenlabs.mjs';
 import { processVoice } from './lib/audio.mjs';
@@ -98,11 +98,11 @@ async function main() {
 	}
 	const list = chunks( script );
 	if ( ! list.length ) {
-		throw new Error( 'post/script.md has no Spoken words: add a Spoken column (guideline §10), then Approval 1.' );
+		throw new Error( 'post/script.md has no Spoken words: add a Spoken column (guideline §10), then the words check.' );
 	}
 	const total = spokenWordCount( script );
 	if ( total > VOICE.maxWords ) {
-		throw new Error( `${ total } words are spoken; at most ${ VOICE.maxWords } (§10). Shorten the Spoken column, then Approval 1 again.` );
+		throw new Error( `${ total } words are spoken; at most ${ VOICE.maxWords } (§10). Shorten the Spoken column, then the words check again.` );
 	}
 	const credits = list.reduce( ( sum, ch ) => sum + ch.sent.length, 0 );
 	console.log( `Voice ${ demo.id } · ${ config.voice_name } · ${ config.tts_model_id } · ${ list.length } scene(s) · ${ total } words` );
@@ -115,7 +115,7 @@ async function main() {
 		return true;
 	}
 
-	const gate = approval( demo );
+	const gate = await wordsGate( demo );
 	if ( ! gate.ok ) {
 		throw new Error( `No voice yet — ${ gate.reason }` );
 	}
@@ -135,7 +135,7 @@ async function main() {
 				throw new Error( `No take ${ t } for ${ id }. Stored: ${ Object.keys( st?.takes || {} ).join( ', ' ) || 'none' }` );
 			}
 			if ( st.takes[ t ].sent !== st.sent ) {
-				throw new Error( `${ id }-${ t } was made from other words than the approved script.` );
+				throw new Error( `${ id }-${ t } was made from other words than the checked script.` );
 			}
 			Object.assign( st, { picked: t, pinned: true } );
 			console.log( `✓ ${ id } → ${ t } (pinned)` );
@@ -222,7 +222,7 @@ async function main() {
 	const flagged = list.filter( ( ch ) => state.chunks[ ch.id ].takes[ state.chunks[ ch.id ].picked ].flags.length ).map( ( ch ) => ch.id );
 	console.log( flagged.length
 		? `Listen to: ${ flagged.join( ', ' ) } — another stored take: --pick <scene>=tN · a new take: --redo <scene>`
-		: 'Every scene reads the approved words, word for word.' );
+		: 'Every scene reads the checked words, word for word.' );
 	console.log( `Credits reported by the API for this video's takes so far: ${ cost || 'not reported' }. Key from the ${ source }.` );
 	console.log( `Next: node tools/video/render.mjs ${ demo.id }` );
 	return ! list.some( ( ch ) => failed( state.chunks[ ch.id ].takes[ state.chunks[ ch.id ].picked ] ) );
