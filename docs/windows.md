@@ -77,6 +77,20 @@ Then **quit and reopen the Claude desktop app and every terminal**: a running pr
 - [ ] `tools/shopify/theme.sh list` lists store B's themes.
 - [ ] `git status` on `main` is clean.
 
+### Before your first `/demo` (since 9 Oct 2026)
+
+A demo is one Claude Code run on store B (`docs/demo-procedure.md`). Once, on this PC, after Yeasir has merged `chore/demo-drill`:
+
+1. `git checkout main && git pull`, then `npm --prefix tools/video run setup` — the toolkit is 1.2.0; the doctor now also checks **PDF printing** (the carousel). Every line `[ok]`, including "Storefront password — accepted" and the ElevenLabs line (§1, §5 if it isn't).
+2. `npm --prefix tools/video test` — 15 of 16 pass; the one failure, "a wrong or missing storefront password", fails on `main` too and is known.
+3. `tools/shopify/theme.sh doctor` — the CLI must already be logged in to the Partner account (you type that login and its two-step; Claude Code never does). An expired login stops the run.
+4. Optional: `PERVEJ_DRIVE_DIR=<your synced drive's recordings folder>` in `tools/shopify/.env.local` (forward slashes, e.g. `G:/My Drive/recordings`).
+5. In the Claude desktop app, open a **new session** in the `pervej-shopify` folder; auto mode is fine for a demo run. Type `/demo` and check that it suggests the skill. Then `/demo <id>` with a brief from `demos/_briefs/`.
+6. Expect one stop at QA, every demo: place the test order on the after theme's preview link (test gateway, card `1`, an `@example.com` email) and save the two admin screenshots it names, then reply with the order number. If the run published a theme, `tools/shopify/theme.sh restore <id>` comes before `clean` after the merge.
+7. At the end, push and open the PR. Without `gh` installed, open the PR on GitHub's page for the branch.
+
+The first demo on store B is also the toolkit's first real capture on a store (Stage 0 step 4 in `docs/demo-procedure.md` was never run): watch its before clips closely, and send Yeasir anything odd.
+
 ---
 
 ## 7. Claude's built-in browser
